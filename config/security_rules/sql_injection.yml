@@ -1,0 +1,65 @@
+# SQL Injection Detection Rules
+# These patterns detect potential SQL injection vulnerabilities
+
+name: SQL Injection
+severity: CRITICAL
+description: Detects potentially unsafe SQL queries that may be vulnerable to SQL injection attacks
+
+patterns:
+  - description: String concatenation in WHERE clause
+    languages: [ruby]
+    regex: '\.where\([''\"]\s*\w+\s*=\s*[''\"]\s*\+\s*'
+    example: 'User.where("email = ''#{email}''")'
+    recommendation: Use parameterized queries or ActiveRecord's hash syntax
+
+  - description: String concatenation in find_by_sql
+    languages: [ruby]
+    regex: '\.find_by_sql\([''\"]\s*.*\+'
+    example: 'User.find_by_sql("SELECT * FROM users WHERE id = " + params[:id])'
+    recommendation: Use parameterized queries with ? placeholders
+
+  - description: String concatenation in SQL execute
+    languages: [ruby]
+    regex: 'execute\([''\"]\s*.*\+'
+    example: 'ActiveRecord::Base.connection.execute("DELETE FROM users WHERE id = " + id)'
+    recommendation: Use parameterized queries with ? placeholders
+
+  - description: String concatenation in SQL query
+    languages: [javascript, typescript]
+    regex: 'query\([''\"]\s*.*\+\s*'
+    example: 'db.query("SELECT * FROM users WHERE id = " + userId)'
+    recommendation: Use parameterized queries or prepared statements
+
+  - description: String concatenation in raw query
+    languages: [javascript, typescript]
+    regex: '\.raw\([''\"]\s*.*\+'
+    example: 'sequelize.query.raw("SELECT * FROM users WHERE name = " + name)'
+    recommendation: Use parameterized queries with ? or $1 placeholders
+
+  - description: String formatting in SQL execute (Python)
+    languages: [python]
+    regex: 'execute\([''\"]\s*.*%\s*'
+    example: 'cursor.execute("SELECT * FROM users WHERE id = %s" % user_id)'
+    recommendation: Use parameterized queries with ? or %s in tuple
+
+  - description: String concatenation in cursor.execute
+    languages: [python]
+    regex: 'cursor\.execute\([''\"]\s*.*\+'
+    example: 'cursor.execute("SELECT * FROM users WHERE id = " + user_id)'
+    recommendation: Use parameterized queries with ? or %s in tuple
+
+  - description: Variable interpolation in mysql_query
+    languages: [php]
+    regex: 'mysql_query\([''\"]\s*.*\$'
+    example: 'mysql_query("SELECT * FROM users WHERE id = $id")'
+    recommendation: Use prepared statements with PDO or mysqli
+
+  - description: Variable interpolation in mysqli_query
+    languages: [php]
+    regex: 'mysqli_query\([''\"]\s*.*\$'
+    example: 'mysqli_query($conn, "SELECT * FROM users WHERE id = $id")'
+    recommendation: Use prepared statements with mysqli_prepare
+
+references:
+  - https://owasp.org/www-community/attacks/SQL_Injection
+  - https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html

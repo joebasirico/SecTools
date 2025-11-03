@@ -1,0 +1,527 @@
+<%
+  # Helper methods for styling
+  def grade_border_color(grade)
+    case grade
+    when 'A' then 'border-green-500'
+    when 'B' then 'border-blue-500'
+    when 'C' then 'border-yellow-500'
+    when 'D' then 'border-orange-500'
+    else 'border-red-500'
+    end
+  end
+
+  def grade_text_color(grade)
+    case grade
+    when 'A' then 'text-green-400'
+    when 'B' then 'text-blue-400'
+    when 'C' then 'text-yellow-400'
+    when 'D' then 'text-orange-400'
+    else 'text-red-400'
+    end
+  end
+
+  def vulnerability_border_class(severity)
+    case severity
+    when 'CRITICAL' then 'border-red-500'
+    when 'HIGH' then 'border-orange-500'
+    when 'MEDIUM' then 'border-yellow-500'
+    else 'border-blue-500'
+    end
+  end
+
+  def vulnerability_badge_class(severity)
+    severity_badge_class(severity)
+  end
+
+  def vulnerability_badge_style(severity)
+    severity_badge_style(severity)
+  end
+
+  def protocol_status_border(supported, secure)
+    return 'border-gray-700' unless supported
+    secure ? 'border-green-500' : 'border-red-500'
+  end
+
+  def protocol_status_color(supported, secure)
+    return 'text-gray-600' unless supported
+    secure ? 'text-green-400' : 'text-red-400'
+  end
+%>
+
+<!-- Download Buttons -->
+<div class="mb-6 flex items-center justify-between">
+  <h3 class="text-lg font-bold text-green-400 terminal-header flex items-center">
+    <span class="mr-2">📥</span>
+    EXPORT REPORT
+  </h3>
+  <div class="flex gap-3">
+    <button onclick="downloadJSON()" class="px-4 py-2 bg-green-600 hover:bg-green-500 text-gray-900 font-mono text-sm font-bold rounded border-2 border-green-400 transition-colors cursor-pointer">
+      [ JSON ]
+    </button>
+  </div>
+</div>
+
+<script>
+  const resultData = <%= result.to_json.html_safe %>;
+
+  function downloadJSON() {
+    const dataStr = JSON.stringify(resultData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `ssl_test_${resultData.host}_${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+</script>
+
+<% if result[:error] %>
+  <div class="bg-red-900 border-2 border-red-500 text-red-300 px-4 py-3 rounded mb-4 font-mono text-sm">
+    <span class="font-bold">[ERROR]</span> <%= result[:error] %>
+  </div>
+<% end %>
+
+<!-- Security Score -->
+<div class="mb-6">
+  <div class="bg-gray-900 border-4 <%= grade_border_color(result[:summary][:grade]) %> rounded-lg p-6 text-center">
+    <div class="text-6xl font-bold <%= grade_text_color(result[:summary][:grade]) %> font-mono mb-2">
+      <%= result[:summary][:grade] %>
+    </div>
+    <div class="text-3xl font-bold text-green-400 font-mono mb-2">
+      <%= result[:summary][:score] %> / <%= result[:summary][:max_score] %>
+    </div>
+    <div class="text-sm text-green-600 font-mono mb-1">
+      SECURITY SCORE
+    </div>
+    <% if result[:summary][:rating] %>
+      <div class="text-lg font-bold <%= grade_text_color(result[:summary][:grade]) %> font-mono">
+        <%= result[:summary][:rating].upcase %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<!-- Target Info -->
+<div class="mb-6 p-4 bg-gray-900 border border-green-700 rounded">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono text-sm">
+    <div>
+      <span class="text-green-600 font-bold">URL:</span>
+      <span class="text-green-400"><%= result[:url] %></span>
+    </div>
+    <div>
+      <span class="text-green-600 font-bold">HOST:</span>
+      <span class="text-green-400"><%= result[:host] %>:<%= result[:port] %></span>
+    </div>
+    <% if result[:tested_at] %>
+    <div class="md:col-span-2">
+      <span class="text-green-600 font-bold">TESTED:</span>
+      <span class="text-green-400"><%= result[:tested_at].strftime('%Y-%m-%d %H:%M:%S UTC') %></span>
+    </div>
+    <% end %>
+  </div>
+</div>
+
+<!-- Vulnerabilities -->
+<% if result[:vulnerabilities].present? && result[:vulnerabilities].any? %>
+  <div class="mb-6">
+    <h3 class="text-lg font-bold text-red-400 mb-3 terminal-header flex items-center">
+      <span class="mr-2">⚠</span>
+      SECURITY ISSUES (<%= result[:vulnerabilities].length %>)
+    </h3>
+
+    <div class="space-y-3">
+      <% result[:vulnerabilities].each do |vuln| %>
+        <div class="bg-gray-900 border-l-4 <%= vulnerability_border_class(vuln[:severity]) %> p-4 rounded">
+          <div class="flex items-start justify-between mb-2">
+            <div class="font-bold text-red-300 font-mono text-lg"><%= vuln[:name] %></div>
+            <div class="flex-shrink-0 ml-4">
+              <span class="<%= vulnerability_badge_class(vuln[:severity]) %>" style="<%= vulnerability_badge_style(vuln[:severity]) %>">
+                <%= vuln[:severity] %>
+              </span>
+            </div>
+          </div>
+
+          <div class="text-sm text-green-500 font-mono mb-2">
+            <%= vuln[:description] %>
+          </div>
+
+          <div class="text-xs text-orange-400 font-mono">
+            <span class="font-bold">IMPACT:</span> <%= vuln[:impact] %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% else %>
+  <div class="mb-6 bg-green-900 border-2 border-green-500 text-green-300 px-4 py-3 rounded font-mono text-sm text-center">
+    <span class="font-bold text-xl">✓</span><br>
+    <span class="font-bold">NO CRITICAL VULNERABILITIES DETECTED</span>
+  </div>
+<% end %>
+
+<!-- Recommendations -->
+<% if result[:recommendations].present? && result[:recommendations].any? %>
+  <div class="mb-6">
+    <h3 class="text-lg font-bold text-yellow-400 mb-3 terminal-header flex items-center">
+      <span class="mr-2">💡</span>
+      RECOMMENDATIONS (<%= result[:recommendations].length %>)
+    </h3>
+
+    <div class="bg-gray-900 border border-yellow-700 rounded p-4">
+      <ul class="space-y-2">
+        <% result[:recommendations].each_with_index do |rec, index| %>
+          <li class="flex items-start font-mono text-sm text-green-400">
+            <span class="text-yellow-500 mr-2 font-bold"><%= index + 1 %>.</span>
+            <span><%= rec %></span>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+  </div>
+<% end %>
+
+<!-- Certificate Information -->
+<% if result[:certificate].present? && !result[:certificate][:error] %>
+  <div class="mb-6">
+    <h3 class="text-lg font-bold text-green-400 mb-3 terminal-header flex items-center">
+      <span class="mr-2">🔒</span>
+      CERTIFICATE INFORMATION
+    </h3>
+
+    <div class="bg-gray-900 border-2 <%= result[:certificate][:valid] ? 'border-green-700' : 'border-red-700' %> rounded p-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <div class="text-xs font-bold text-green-600 font-mono mb-1">SUBJECT:</div>
+          <div class="text-sm text-green-400 font-mono break-all"><%= result[:certificate][:subject] %></div>
+        </div>
+
+        <div>
+          <div class="text-xs font-bold text-green-600 font-mono mb-1">ISSUER:</div>
+          <div class="text-sm text-green-400 font-mono break-all"><%= result[:certificate][:issuer] %></div>
+        </div>
+
+        <div>
+          <div class="text-xs font-bold text-green-600 font-mono mb-1">VALID FROM:</div>
+          <div class="text-sm text-green-400 font-mono">
+            <%= result[:certificate][:not_before]&.strftime('%Y-%m-%d %H:%M:%S UTC') %>
+          </div>
+        </div>
+
+        <div>
+          <div class="text-xs font-bold text-green-600 font-mono mb-1">VALID UNTIL:</div>
+          <div class="text-sm <%= result[:certificate][:expired] ? 'text-red-400' : 'text-green-400' %> font-mono">
+            <%= result[:certificate][:not_after]&.strftime('%Y-%m-%d %H:%M:%S UTC') %>
+            <% if result[:certificate][:expires_in_days] %>
+              (<%= result[:certificate][:expires_in_days] %> days)
+            <% end %>
+          </div>
+        </div>
+
+        <div>
+          <div class="text-xs font-bold text-green-600 font-mono mb-1">KEY ALGORITHM:</div>
+          <div class="text-sm text-green-400 font-mono">
+            <%= result[:certificate][:public_key_algorithm] %>
+            <% if result[:certificate][:key_size] %>
+              (<%= result[:certificate][:key_size] %> bits)
+            <% end %>
+          </div>
+        </div>
+
+        <div>
+          <div class="text-xs font-bold text-green-600 font-mono mb-1">SIGNATURE ALGORITHM:</div>
+          <div class="text-sm text-green-400 font-mono"><%= result[:certificate][:signature_algorithm] %></div>
+        </div>
+
+        <div>
+          <div class="text-xs font-bold text-green-600 font-mono mb-1">SERIAL NUMBER:</div>
+          <div class="text-sm text-green-400 font-mono break-all"><%= result[:certificate][:serial] %></div>
+        </div>
+
+        <div>
+          <div class="text-xs font-bold text-green-600 font-mono mb-1">CERTIFICATE CHAIN:</div>
+          <div class="text-sm text-green-400 font-mono"><%= result[:certificate][:chain_length] %> certificate(s)</div>
+        </div>
+      </div>
+
+      <% if result[:certificate][:san_domains].present? && result[:certificate][:san_domains].any? %>
+        <div class="mt-4 pt-4 border-t border-green-900">
+          <div class="text-xs font-bold text-green-600 font-mono mb-2">SUBJECT ALTERNATIVE NAMES (SAN):</div>
+          <div class="flex flex-wrap gap-2">
+            <% result[:certificate][:san_domains].each do |domain| %>
+              <span class="px-2 py-1 bg-gray-800 text-green-400 font-mono text-xs rounded border border-green-700">
+                <%= domain %>
+              </span>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<!-- Protocol Support -->
+<% if result[:protocols].present? %>
+  <div class="mb-6">
+    <h3 class="text-lg font-bold text-green-400 mb-3 terminal-header flex items-center">
+      <span class="mr-2">🔐</span>
+      TLS/SSL PROTOCOL SUPPORT
+    </h3>
+
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <% result[:protocols].each do |protocol_name, info| %>
+        <div class="bg-gray-900 border-2 <%= protocol_status_border(info[:supported], info[:secure]) %> rounded p-3 text-center">
+          <div class="text-lg font-bold font-mono <%= protocol_status_color(info[:supported], info[:secure]) %>">
+            <%= protocol_name %>
+          </div>
+          <div class="text-xs font-mono mt-1 <%= protocol_status_color(info[:supported], info[:secure]) %>">
+            <%= info[:supported] ? (info[:secure] ? 'SUPPORTED ✓' : 'INSECURE ⚠') : 'DISABLED' %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<!-- TLS Configuration -->
+<% if result[:tls_config].present? %>
+  <div class="mb-6">
+    <h3 class="text-lg font-bold text-green-400 mb-3 terminal-header flex items-center">
+      <span class="mr-2">⚙️</span>
+      TLS CONFIGURATION & FEATURES
+    </h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <!-- OCSP Stapling -->
+      <div class="bg-gray-900 border-2 <%= result[:tls_config][:ocsp_stapling]&.dig(:enabled) ? 'border-green-700' : 'border-gray-700' %> rounded p-3">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-mono text-green-400">OCSP Stapling</span>
+          <span class="text-xs font-mono <%= result[:tls_config][:ocsp_stapling]&.dig(:enabled) ? 'text-green-400' : 'text-gray-600' %>">
+            <%= result[:tls_config][:ocsp_stapling]&.dig(:enabled) ? '✓ ENABLED' : '✗ DISABLED' %>
+          </span>
+        </div>
+      </div>
+
+      <!-- Certificate Transparency -->
+      <div class="bg-gray-900 border-2 <%= result[:tls_config][:certificate_transparency]&.dig(:enabled) ? 'border-green-700' : 'border-gray-700' %> rounded p-3">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-mono text-green-400">Certificate Transparency (SCT)</span>
+          <span class="text-xs font-mono <%= result[:tls_config][:certificate_transparency]&.dig(:enabled) ? 'text-green-400' : 'text-gray-600' %>">
+            <%= result[:tls_config][:certificate_transparency]&.dig(:enabled) ? '✓ PRESENT' : '✗ MISSING' %>
+          </span>
+        </div>
+      </div>
+
+      <!-- TLS Compression -->
+      <div class="bg-gray-900 border-2 <%= result[:tls_config][:compression_supported] ? 'border-red-700' : 'border-green-700' %> rounded p-3">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-mono text-green-400">TLS Compression (CRIME)</span>
+          <span class="text-xs font-mono <%= result[:tls_config][:compression_supported] ? 'text-red-400' : 'text-green-400' %>">
+            <%= result[:tls_config][:compression_supported] ? '⚠ VULNERABLE' : '✓ DISABLED' %>
+          </span>
+        </div>
+      </div>
+
+      <!-- Secure Renegotiation -->
+      <div class="bg-gray-900 border-2 <%= result[:tls_config][:secure_renegotiation] ? 'border-green-700' : 'border-red-700' %> rounded p-3">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-mono text-green-400">Secure Renegotiation</span>
+          <span class="text-xs font-mono <%= result[:tls_config][:secure_renegotiation] ? 'text-green-400' : 'text-red-400' %>">
+            <%= result[:tls_config][:secure_renegotiation] ? '✓ SUPPORTED' : '✗ NOT SUPPORTED' %>
+          </span>
+        </div>
+      </div>
+
+      <!-- Session Resumption -->
+      <% if result[:tls_config][:session_resumption] %>
+        <div class="bg-gray-900 border-2 <%= result[:tls_config][:session_resumption][:session_id] ? 'border-green-700' : 'border-gray-700' %> rounded p-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-mono text-green-400">Session Resumption (ID)</span>
+            <span class="text-xs font-mono <%= result[:tls_config][:session_resumption][:session_id] ? 'text-green-400' : 'text-gray-600' %>">
+              <%= result[:tls_config][:session_resumption][:session_id] ? '✓ SUPPORTED' : '✗ NOT SUPPORTED' %>
+            </span>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Fallback SCSV -->
+      <div class="bg-gray-900 border-2 <%= result[:tls_config][:fallback_scsv]&.dig(:supported) ? 'border-green-700' : 'border-gray-700' %> rounded p-3">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-mono text-green-400">TLS Fallback SCSV</span>
+          <span class="text-xs font-mono <%= result[:tls_config][:fallback_scsv]&.dig(:supported) ? 'text-green-400' : 'text-gray-600' %>">
+            <%= result[:tls_config][:fallback_scsv]&.dig(:supported) ? '✓ SUPPORTED' : '✗ NOT DETECTED' %>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<!-- Cipher Suites -->
+<% if result[:ciphers].present? && result[:ciphers][:ciphers].any? %>
+  <div class="mb-6">
+    <h3 class="text-lg font-bold text-green-400 mb-3 terminal-header flex items-center">
+      <span class="mr-2">🔑</span>
+      CIPHER SUITES ANALYSIS
+    </h3>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+      <div class="bg-gray-900 border border-blue-700 rounded p-3 text-center">
+        <div class="text-2xl font-bold text-blue-400 font-mono"><%= result[:ciphers][:total_supported] || result[:ciphers][:ciphers].length %></div>
+        <div class="text-xs text-blue-600 font-mono mt-1">TOTAL SUPPORTED</div>
+      </div>
+      <div class="bg-gray-900 border border-green-700 rounded p-3 text-center">
+        <div class="text-2xl font-bold text-green-400 font-mono"><%= result[:ciphers][:strong_count] %></div>
+        <div class="text-xs text-green-600 font-mono mt-1">STRONG</div>
+      </div>
+      <div class="bg-gray-900 border border-yellow-700 rounded p-3 text-center">
+        <div class="text-2xl font-bold text-yellow-400 font-mono"><%= result[:ciphers][:medium_count] || 0 %></div>
+        <div class="text-xs text-yellow-600 font-mono mt-1">MEDIUM</div>
+      </div>
+      <div class="bg-gray-900 border border-red-700 rounded p-3 text-center">
+        <div class="text-2xl font-bold text-red-400 font-mono"><%= result[:ciphers][:weak_count] %></div>
+        <div class="text-xs text-red-600 font-mono mt-1">WEAK</div>
+      </div>
+    </div>
+
+    <!-- Forward Secrecy Info -->
+    <% if result[:ciphers][:forward_secrecy_count] %>
+      <div class="mb-4 p-3 bg-gray-900 border-2 <%= result[:ciphers][:forward_secrecy_count] > 0 ? 'border-green-700' : 'border-red-700' %> rounded">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-mono text-green-400">Forward Secrecy (FS) Support</span>
+          <span class="text-sm font-mono <%= result[:ciphers][:forward_secrecy_count] > 0 ? 'text-green-400' : 'text-red-400' %>">
+            <%= result[:ciphers][:forward_secrecy_count] %> cipher(s) with FS <%= result[:ciphers][:forward_secrecy_count] > 0 ? '✓' : '✗' %>
+          </span>
+        </div>
+      </div>
+    <% end %>
+
+    <!-- Server Cipher Order -->
+    <% if result[:ciphers][:server_cipher_order] != nil %>
+      <div class="mb-4 p-3 bg-gray-900 border-2 <%= result[:ciphers][:server_cipher_order] ? 'border-green-700' : 'border-yellow-700' %> rounded">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-mono text-green-400">Server Cipher Preference</span>
+          <span class="text-sm font-mono <%= result[:ciphers][:server_cipher_order] ? 'text-green-400' : 'text-yellow-400' %>">
+            <%= result[:ciphers][:server_cipher_order] ? '✓ Server Enforces Order' : '⚠ Client Order Preferred' %>
+          </span>
+        </div>
+        <% if result[:ciphers][:server_preferred_order]&.any? %>
+          <div class="mt-2 text-xs text-gray-500 font-mono">
+            Top preferences: <%= result[:ciphers][:server_preferred_order].first(3).join(', ') %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <% if result[:ciphers][:weak_ciphers].any? %>
+      <div class="mb-4">
+        <h4 class="text-md font-bold text-red-400 mb-2 font-mono">⚠ WEAK CIPHERS DETECTED:</h4>
+        <div class="space-y-2">
+          <% result[:ciphers][:weak_ciphers].each do |cipher| %>
+            <div class="bg-gray-950 border border-red-900 rounded p-3">
+              <div class="flex items-start justify-between">
+                <span class="text-sm text-red-300 font-mono font-bold"><%= cipher[:name] %></span>
+                <span class="px-2 py-1 bg-red-900 text-red-300 font-mono text-xs rounded">
+                  <%= cipher[:bits] %> bits
+                </span>
+              </div>
+              <div class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2 text-xs font-mono text-gray-500">
+                <div>Proto: <%= cipher[:protocol] || cipher[:version] %></div>
+                <div>Kx: <%= cipher[:key_exchange] || 'N/A' %></div>
+                <div>Auth: <%= cipher[:authentication] || 'N/A' %></div>
+                <div>Enc: <%= cipher[:encryption] || 'N/A' %></div>
+              </div>
+              <% if cipher[:forward_secrecy] == false %>
+                <div class="mt-1 text-xs text-orange-400 font-mono">⚠ No Forward Secrecy</div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <!-- Cipher Suites by Protocol -->
+    <% if result[:ciphers][:by_protocol]&.any? %>
+      <details class="mb-4">
+        <summary class="cursor-pointer text-sm text-green-400 font-mono hover:text-green-300 mb-2">
+          📋 View Cipher Suites by Protocol
+        </summary>
+        <div class="mt-2 space-y-3">
+          <% result[:ciphers][:by_protocol].each do |protocol_name, protocol_ciphers| %>
+            <div class="bg-gray-950 border border-green-900 rounded p-3">
+              <h5 class="text-sm font-bold text-green-400 font-mono mb-2"><%= protocol_name %> (<%= protocol_ciphers.length %> ciphers)</h5>
+              <div class="space-y-1">
+                <% protocol_ciphers.first(10).each do |cipher| %>
+                  <div class="flex items-center justify-between text-xs font-mono">
+                    <span class="<%= cipher[:strength] == 'WEAK' ? 'text-red-400' : cipher[:strength] == 'STRONG' ? 'text-green-400' : 'text-yellow-400' %>">
+                      <%= cipher[:name] %>
+                      <%= cipher[:forward_secrecy] ? '[FS]' : '' %>
+                    </span>
+                    <span class="text-gray-600"><%= cipher[:bits] %> bits</span>
+                  </div>
+                <% end %>
+                <% if protocol_ciphers.length > 10 %>
+                  <div class="text-xs text-gray-600 font-mono mt-2">
+                    ... and <%= protocol_ciphers.length - 10 %> more
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </details>
+    <% end %>
+
+    <% if result[:ciphers][:strong_ciphers].any? %>
+      <details>
+        <summary class="cursor-pointer text-sm text-green-400 font-mono hover:text-green-300">
+          ✓ View Strong Ciphers (<%= result[:ciphers][:strong_ciphers].length %>)
+        </summary>
+        <div class="mt-2 space-y-1">
+          <% result[:ciphers][:strong_ciphers].each do |cipher| %>
+            <div class="bg-gray-950 border border-green-900 rounded p-2">
+              <div class="flex items-start justify-between">
+                <span class="text-xs text-green-400 font-mono"><%= cipher[:name] %></span>
+                <span class="px-2 py-1 bg-green-900 text-green-300 font-mono text-xs rounded">
+                  <%= cipher[:bits] %> bits
+                </span>
+              </div>
+              <% if cipher[:key_exchange] || cipher[:encryption] %>
+                <div class="mt-1 grid grid-cols-2 md:grid-cols-4 gap-2 text-xs font-mono text-gray-600">
+                  <div>Kx: <%= cipher[:key_exchange] %></div>
+                  <div>Auth: <%= cipher[:authentication] %></div>
+                  <div>Enc: <%= cipher[:encryption] %></div>
+                  <div>MAC: <%= cipher[:mac] %></div>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </details>
+    <% end %>
+
+    <!-- All Ciphers List -->
+    <details class="mt-4">
+      <summary class="cursor-pointer text-sm text-blue-400 font-mono hover:text-blue-300">
+        📊 View All Supported Ciphers (<%= result[:ciphers][:ciphers].length %>)
+      </summary>
+      <div class="mt-2 space-y-1 max-h-96 overflow-y-auto">
+        <% result[:ciphers][:ciphers].each do |cipher| %>
+          <div class="bg-gray-950 border <%= cipher[:strength] == 'WEAK' ? 'border-red-900' : cipher[:strength] == 'STRONG' ? 'border-green-900' : 'border-yellow-900' %> rounded p-2">
+            <div class="flex items-start justify-between">
+              <span class="text-xs font-mono <%= cipher[:strength] == 'WEAK' ? 'text-red-400' : cipher[:strength] == 'STRONG' ? 'text-green-400' : 'text-yellow-400' %>">
+                <%= cipher[:name] %>
+                <% if cipher[:forward_secrecy] %>
+                  <span class="text-green-500">[FS]</span>
+                <% end %>
+              </span>
+              <span class="px-2 py-1 bg-gray-800 <%= cipher[:strength] == 'WEAK' ? 'text-red-300' : cipher[:strength] == 'STRONG' ? 'text-green-300' : 'text-yellow-300' %> font-mono text-xs rounded">
+                <%= cipher[:bits] %> bits
+              </span>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </details>
+  </div>
+<% end %>

@@ -1,0 +1,77 @@
+# Command Injection Detection Rules
+# These patterns detect potential OS command injection vulnerabilities
+
+name: Command Injection
+severity: CRITICAL
+description: Detects unsafe execution of system commands with user input
+
+patterns:
+  - description: String concatenation in system()
+    languages: [ruby]
+    regex: 'system\([''\"]\s*.*\+'
+    example: 'system("ls " + params[:dir])'
+    recommendation: Use array syntax or sanitize input with Shellwords.escape()
+
+  - description: String interpolation in backticks
+    languages: [ruby]
+    regex: '`[^`]*\#\{'
+    example: '`cat #{filename}`'
+    recommendation: Use Open3 or sanitize with Shellwords.escape()
+
+  - description: String concatenation in exec()
+    languages: [ruby]
+    regex: 'exec\([''\"]\s*.*\+'
+    example: 'exec("rm " + file)'
+    recommendation: Use array syntax or sanitize input
+
+  - description: String concatenation in os.system()
+    languages: [python]
+    regex: 'os\.system\([''\"]\s*.*\+'
+    example: 'os.system("rm " + filename)'
+    recommendation: Use subprocess with list arguments
+
+  - description: String concatenation in subprocess
+    languages: [python]
+    regex: 'subprocess\.(call|run|Popen)\([''\"]\s*.*\+'
+    example: 'subprocess.call("ls " + directory)'
+    recommendation: Use list syntax subprocess.call(["ls", directory])
+
+  - description: Shell=True in subprocess
+    languages: [python]
+    regex: 'subprocess\.(call|run|Popen)\(.*shell\s*=\s*True'
+    example: 'subprocess.call(cmd, shell=True)'
+    recommendation: Avoid shell=True or use shlex.quote() for arguments
+
+  - description: Variable in exec() (PHP)
+    languages: [php]
+    regex: 'exec\([''\"]\s*.*\$'
+    example: 'exec("ls " . $dir)'
+    recommendation: Use escapeshellarg() or escapeshellcmd()
+
+  - description: Variable in shell_exec() (PHP)
+    languages: [php]
+    regex: 'shell_exec\([''\"]\s*.*\$'
+    example: 'shell_exec("cat " . $file)'
+    recommendation: Use escapeshellarg() or escapeshellcmd()
+
+  - description: Variable in system() (PHP)
+    languages: [php]
+    regex: 'system\([''\"]\s*.*\$'
+    example: 'system("rm " . $filename)'
+    recommendation: Use escapeshellarg() or escapeshellcmd()
+
+  - description: String concatenation in exec() (Node.js)
+    languages: [javascript, typescript]
+    regex: 'exec\([''\"]\s*.*\+'
+    example: 'exec("ls " + directory)'
+    recommendation: Use execFile or spawn with array arguments
+
+  - description: String template in exec()
+    languages: [javascript, typescript]
+    regex: 'exec\(`.*\$\{'
+    example: 'exec(`cat ${filename}`)'
+    recommendation: Use execFile or spawn with array arguments
+
+references:
+  - https://owasp.org/www-community/attacks/Command_Injection
+  - https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html

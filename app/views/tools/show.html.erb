@@ -31,7 +31,7 @@
           INPUT PARAMETERS
         </h2>
         <%= form_with url: execute_tool_path(@tool_instance.class.name.underscore.gsub('_tool', '')),
-                      method: :post, local: true, data: { turbo: false }, multipart: true, class: "space-y-4" do |f| %>
+                      method: :post, local: true, data: { turbo: false }, multipart: true, class: "space-y-4", id: "tool-execution-form" do |f| %>
 
           <% @tool_class.tool_inputs.each do |input| %>
             <div>
@@ -62,7 +62,7 @@
                       <label for="file-upload-<%= input[:name] %>" class="relative cursor-pointer rounded-md font-bold text-green-300 hover:text-green-200">
                         <span>Click to upload</span>
                         <%= file_field_tag "tool[#{input[:name]}]",
-                            accept: '.lock,.json,.txt',
+                            accept: input[:options][:accept] || '*',
                             required: input[:required],
                             id: "file-upload-#{input[:name]}",
                             class: "sr-only" %>
@@ -103,8 +103,42 @@
 
       <!-- Debug: @result present? <%= @result.present? %>, @formatted_result present? <%= @formatted_result.present? %> -->
 
+      <!-- Loading Spinner -->
+      <div id="loading-spinner" class="hacker-card hidden" style="display: none;">
+        <div class="text-center py-12">
+          <div class="inline-block relative">
+            <!-- Animated spinner -->
+            <div class="w-20 h-20 border-4 border-green-900 border-t-green-400 rounded-full animate-spin"></div>
+            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+              <svg class="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+              </svg>
+            </div>
+          </div>
+          <div class="mt-6 text-green-400 font-mono">
+            <div class="text-xl font-bold mb-2">[ ANALYZING... ]</div>
+            <div class="text-sm text-green-600">
+              <span id="loading-message">Executing security scan</span>
+              <span class="loading-dots">
+                <span class="dot-1">.</span>
+                <span class="dot-2">.</span>
+                <span class="dot-3">.</span>
+              </span>
+            </div>
+            <% if @tool_class.name == 'SslSecurityTesterTool' %>
+              <div class="mt-4 text-xs text-green-700 space-y-1">
+                <div>→ Testing TLS/SSL protocols</div>
+                <div>→ Enumerating cipher suites</div>
+                <div>→ Analyzing certificate</div>
+                <div>→ Checking vulnerabilities</div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
       <% if @result.present? %>
-        <div class="hacker-card">
+        <div class="hacker-card" id="results-container" style="display: block;">
           <h2 class="text-xl font-bold text-green-400 mb-4 terminal-header flex items-center">
             <span class="mr-2">▶</span>
             SCAN RESULTS
@@ -112,6 +146,10 @@
 
           <% if @tool_class.name == 'DepValidatorTool' %>
             <%= render partial: 'tools/dependency_tree', locals: { result: @result } %>
+          <% elsif @tool_class.name == 'CodeSecurityScannerTool' %>
+            <%= render partial: 'tools/code_security_results', locals: { result: @result } %>
+          <% elsif @tool_class.name == 'SslSecurityTesterTool' %>
+            <%= render partial: 'tools/ssl_security_results', locals: { result: @result } %>
           <% elsif @result.is_a?(Hash) %>
             <div class="space-y-4">
               <% @result.each do |key, value| %>
@@ -185,6 +223,32 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
+    // Form submission handler for loading spinner
+    const form = document.getElementById('tool-execution-form');
+    const loadingSpinner = document.getElementById('loading-spinner');
+    const resultsContainer = document.getElementById('results-container');
+
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        // Hide existing results
+        if (resultsContainer) {
+          resultsContainer.style.display = 'none';
+        }
+
+        // Show loading spinner
+        if (loadingSpinner) {
+          loadingSpinner.classList.remove('hidden');
+          loadingSpinner.style.display = 'block';
+
+          // Scroll to spinner
+          loadingSpinner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // Form will submit normally, spinner will be hidden on page reload
+      });
+    }
+
+    // File drop zone handling
     const dropZones = document.querySelectorAll('.file-drop-zone');
 
     dropZones.forEach(dropZone => {
@@ -271,5 +335,47 @@
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border-width: 0;
+  }
+
+  /* Loading dots animation */
+  .loading-dots {
+    display: inline-block;
+  }
+
+  .loading-dots span {
+    animation: blink 1.4s infinite;
+    animation-fill-mode: both;
+  }
+
+  .loading-dots .dot-1 {
+    animation-delay: 0s;
+  }
+
+  .loading-dots .dot-2 {
+    animation-delay: 0.2s;
+  }
+
+  .loading-dots .dot-3 {
+    animation-delay: 0.4s;
+  }
+
+  @keyframes blink {
+    0%, 80%, 100% {
+      opacity: 0;
+    }
+    40% {
+      opacity: 1;
+    }
+  }
+
+  /* Spinner animation */
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .animate-spin {
+    animation: spin 1s linear infinite;
   }
 </style>

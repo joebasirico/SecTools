@@ -1,0 +1,65 @@
+# Weak Cryptography Detection Rules
+# These patterns detect use of weak or broken cryptographic algorithms
+
+name: Weak Cryptography
+severity: MEDIUM
+description: Detects use of weak or deprecated cryptographic algorithms
+
+patterns:
+  - description: Using MD5 hash
+    languages: [ruby, python, javascript, typescript, php, java]
+    regex: '\b(MD5|md5|Md5)\b'
+    example: 'Digest::MD5.hexdigest(password)'
+    recommendation: Use SHA-256, SHA-3, or bcrypt for password hashing
+
+  - description: Using SHA1 hash
+    languages: [ruby, python, javascript, typescript, php, java]
+    regex: '\b(SHA1|sha1|Sha1)\b'
+    example: 'Digest::SHA1.hexdigest(data)'
+    recommendation: Use SHA-256 or SHA-3 instead
+
+  - description: Using DES encryption
+    languages: [ruby, python, javascript, typescript, php, java]
+    regex: '\b(DES|des|Des)(?!cribe|ign|troy|tination)\b'
+    example: 'cipher = OpenSSL::Cipher::DES.new'
+    recommendation: Use AES-256-GCM or ChaCha20-Poly1305
+
+  - description: Using ECB mode
+    languages: [ruby, python, javascript, typescript, php, java]
+    regex: '\b(ECB|ecb)\b'
+    example: 'cipher = OpenSSL::Cipher::AES.new(128, :ECB)'
+    recommendation: Use GCM, CCM, or CBC with HMAC modes
+
+  - description: Insecure random number generation (Ruby)
+    languages: [ruby]
+    regex: '\brand\b(?!\(om\))'
+    example: 'token = rand(1000000)'
+    recommendation: Use SecureRandom for cryptographic purposes
+
+  - description: Math.random() for security (JavaScript)
+    languages: [javascript, typescript]
+    regex: 'Math\.random\(\)'
+    example: 'const token = Math.random().toString(36)'
+    recommendation: Use crypto.randomBytes() or crypto.getRandomValues()
+
+  - description: Insecure random (Python)
+    languages: [python]
+    regex: '\brandom\.random\(\)'
+    example: 'token = random.random()'
+    recommendation: Use secrets module for cryptographic purposes
+
+  - description: Using deprecated mcrypt (PHP)
+    languages: [php]
+    regex: 'mcrypt_'
+    example: 'mcrypt_encrypt(MCRYPT_DES, $key, $data)'
+    recommendation: Use openssl_encrypt with AES-256-GCM
+
+  - description: RC4 cipher
+    languages: [ruby, python, javascript, typescript, php, java]
+    regex: '\b(RC4|rc4|ARCFOUR)\b'
+    example: 'cipher = OpenSSL::Cipher::RC4.new'
+    recommendation: Use AES-256-GCM or ChaCha20-Poly1305
+
+references:
+  - https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/09-Testing_for_Weak_Cryptography/04-Testing_for_Weak_Encryption
+  - https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html

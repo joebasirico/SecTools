@@ -1,0 +1,53 @@
+# JWT Security Issues Detection Rules
+# These patterns detect insecure JWT implementations
+
+name: JWT Security Issues
+severity: HIGH
+description: Detects JWT tokens without proper verification or using weak algorithms
+
+patterns:
+  - description: JWT decode without signature verification (Ruby)
+    languages: [ruby]
+    regex: 'JWT\.decode\([^,]*,\s*nil'
+    example: 'JWT.decode(token, nil, false)'
+    recommendation: Always verify JWT signatures with a proper secret
+
+  - description: JWT using "none" algorithm (Ruby)
+    languages: [ruby]
+    regex: 'algorithm:\s*[''"]none[''"]'
+    example: 'JWT.encode(payload, secret, "none")'
+    recommendation: Never use "none" algorithm - use HS256, RS256, or ES256
+
+  - description: JWT verify with empty secret (JavaScript)
+    languages: [javascript, typescript]
+    regex: 'jwt\.verify\([^,]*,\s*[''"]?[''"]?\)'
+    example: 'jwt.verify(token, "")'
+    recommendation: Use a strong secret for JWT verification
+
+  - description: JWT using "none" algorithm (JavaScript)
+    languages: [javascript, typescript]
+    regex: 'algorithm:\s*[''"]none[''"]'
+    example: 'jwt.sign(payload, secret, { algorithm: "none" })'
+    recommendation: Never use "none" algorithm
+
+  - description: JWT decode without verification (Python)
+    languages: [python]
+    regex: 'jwt\.decode\([^,]*,\s*options\s*=\s*\{[^}]*[''"]verify_signature[''"]:\s*False'
+    example: 'jwt.decode(token, options={"verify_signature": False})'
+    recommendation: Always verify JWT signatures
+
+  - description: JWT decode with verify=False (Python)
+    languages: [python]
+    regex: 'jwt\.decode\([^,]*,\s*verify\s*=\s*False'
+    example: 'jwt.decode(token, secret, verify=False)'
+    recommendation: Always verify JWT signatures
+
+  - description: JWT with weak algorithm HS256 and public key
+    languages: [ruby, python, javascript, typescript]
+    regex: 'algorithm:\s*[''"]HS256[''"].*public'
+    example: 'JWT.encode(payload, public_key, "HS256")'
+    recommendation: Use RS256 or ES256 for asymmetric keys
+
+references:
+  - https://auth0.com/blog/critical-vulnerabilities-in-json-web-token-libraries/
+  - https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html

@@ -22,7 +22,8 @@ class DepValidatorTool
 
   input_field :dependency_file, type: :file, label: "Dependency File",
               placeholder: "Upload Gemfile.lock, package-lock.json, or requirements.txt",
-              required: true
+              required: true,
+              accept: '.lock,.json,.txt'
   input_field :force_refresh, type: :checkbox, label: "Force Refresh Cache",
               placeholder: "Bypass cache and fetch fresh data from OSV",
               required: false

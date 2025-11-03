@@ -1,0 +1,213 @@
+<!-- Download Buttons -->
+<div class="mb-6 flex items-center justify-between">
+  <h3 class="text-lg font-bold text-green-400 terminal-header flex items-center">
+    <span class="mr-2">📥</span>
+    EXPORT REPORT
+  </h3>
+  <div class="flex gap-3">
+    <button onclick="downloadJSON()" class="px-4 py-2 bg-green-600 hover:bg-green-500 text-gray-900 font-mono text-sm font-bold rounded border-2 border-green-400 transition-colors cursor-pointer">
+      [ JSON ]
+    </button>
+    <button onclick="downloadCSV()" class="px-4 py-2 bg-green-600 hover:bg-green-500 text-gray-900 font-mono text-sm font-bold rounded border-2 border-green-400 transition-colors cursor-pointer">
+      [ CSV ]
+    </button>
+  </div>
+</div>
+
+<script>
+  const resultData = <%= result.to_json.html_safe %>;
+
+  function downloadJSON() {
+    const dataStr = JSON.stringify(resultData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `code_security_scan_${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function downloadCSV() {
+    let csv = 'Code Security Scan Report,' + new Date().toLocaleString() + '\n\n';
+    csv += 'Files Scanned,' + (resultData.files_scanned || 0) + '\n';
+    csv += 'Scan Type,' + (resultData.scan_type || 'Standard') + '\n';
+    csv += 'Total Findings,' + (resultData.summary?.total || 0) + '\n\n';
+
+    csv += 'SUMMARY\n';
+    csv += 'Critical,' + (resultData.summary?.critical || 0) + '\n';
+    csv += 'High,' + (resultData.summary?.high || 0) + '\n';
+    csv += 'Medium,' + (resultData.summary?.medium || 0) + '\n';
+    csv += 'Low,' + (resultData.summary?.low || 0) + '\n\n';
+
+    if (resultData.findings && resultData.findings.length > 0) {
+      csv += 'FINDINGS\n';
+      csv += 'File,Line,Vulnerability Type,Severity,Description,Code\n';
+      resultData.findings.forEach(finding => {
+        csv += `"${finding.file}","${finding.line_number}","${finding.vulnerability_type}","${finding.severity}","${finding.description}","${(finding.line_content || '').replace(/"/g, '""')}"\n`;
+      });
+    }
+
+    const dataBlob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `code_security_scan_${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+</script>
+
+<% if result[:error] %>
+  <div class="bg-red-900 border-2 border-red-500 text-red-300 px-4 py-3 rounded mb-4 font-mono text-sm">
+    <span class="font-bold">[ERROR]</span> <%= result[:error] %>
+  </div>
+<% end %>
+
+<!-- Summary Dashboard -->
+<div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+  <div class="bg-gray-900 border-2 border-green-600 rounded p-4 text-center">
+    <div class="text-3xl font-bold text-green-400 font-mono"><%= result[:files_scanned] || 0 %></div>
+    <div class="text-xs text-green-600 font-mono mt-1">FILES SCANNED</div>
+  </div>
+
+  <div class="bg-gray-900 border-2 <%= result[:summary][:critical] > 0 ? 'border-red-500' : 'border-gray-700' %> rounded p-4 text-center">
+    <div class="text-3xl font-bold <%= result[:summary][:critical] > 0 ? 'text-red-400' : 'text-gray-600' %> font-mono">
+      <%= result[:summary][:critical] || 0 %>
+    </div>
+    <div class="text-xs text-red-600 font-mono mt-1">CRITICAL</div>
+  </div>
+
+  <div class="bg-gray-900 border-2 <%= result[:summary][:high] > 0 ? 'border-orange-500' : 'border-gray-700' %> rounded p-4 text-center">
+    <div class="text-3xl font-bold <%= result[:summary][:high] > 0 ? 'text-orange-400' : 'text-gray-600' %> font-mono">
+      <%= result[:summary][:high] || 0 %>
+    </div>
+    <div class="text-xs text-orange-600 font-mono mt-1">HIGH</div>
+  </div>
+
+  <div class="bg-gray-900 border-2 <%= result[:summary][:medium] > 0 ? 'border-yellow-500' : 'border-gray-700' %> rounded p-4 text-center">
+    <div class="text-3xl font-bold <%= result[:summary][:medium] > 0 ? 'text-yellow-400' : 'text-gray-600' %> font-mono">
+      <%= result[:summary][:medium] || 0 %>
+    </div>
+    <div class="text-xs text-yellow-600 font-mono mt-1">MEDIUM</div>
+  </div>
+
+  <div class="bg-gray-900 border-2 <%= result[:summary][:low] > 0 ? 'border-blue-500' : 'border-gray-700' %> rounded p-4 text-center">
+    <div class="text-3xl font-bold <%= result[:summary][:low] > 0 ? 'text-blue-400' : 'text-gray-600' %> font-mono">
+      <%= result[:summary][:low] || 0 %>
+    </div>
+    <div class="text-xs text-blue-600 font-mono mt-1">LOW</div>
+  </div>
+</div>
+
+<!-- Scan Type Info -->
+<div class="mb-6 p-3 bg-gray-900 border border-green-700 rounded font-mono text-sm text-green-400">
+  <span class="text-green-600 font-bold">SCAN TYPE:</span> <%= result[:scan_type] || 'Standard Scan' %>
+</div>
+
+<!-- Findings by Type -->
+<% if result[:findings].present? && result[:findings].any? %>
+  <%
+    # Group findings by vulnerability type
+    findings_by_type = result[:findings].group_by { |f| f[:vulnerability_type] }
+  %>
+
+  <div class="mb-6">
+    <h3 class="text-lg font-bold text-red-400 mb-3 terminal-header flex items-center">
+      <span class="mr-2">🔍</span>
+      SECURITY FINDINGS (<%= result[:findings].length %>)
+    </h3>
+
+    <div class="space-y-4">
+      <% findings_by_type.each do |vuln_type, findings| %>
+        <div class="bg-gray-900 border-2 border-red-700 rounded p-4">
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <div class="font-bold text-red-300 font-mono text-lg flex items-center">
+                <span class="mr-2">⚠</span>
+                <%= vuln_type %>
+              </div>
+              <div class="text-sm text-green-500 font-mono mt-1">
+                <%= findings.length %> <%= 'occurrence'.pluralize(findings.length) %> found
+              </div>
+            </div>
+            <div class="flex-shrink-0 ml-4">
+              <span class="<%= severity_badge_class(findings.first[:severity]) %>" style="<%= severity_badge_style(findings.first[:severity]) %>">
+                <%= findings.first[:severity] %>
+              </span>
+            </div>
+          </div>
+
+          <!-- Individual findings for this type -->
+          <div class="space-y-3 mt-4">
+            <% findings.each_with_index do |finding, idx| %>
+              <div class="bg-gray-950 border border-green-900 rounded p-3 <%= idx > 2 ? 'finding-collapsed' : '' %>">
+                <div class="flex items-start justify-between mb-2">
+                  <div class="font-mono text-xs text-green-600">
+                    <span class="font-bold">FILE:</span> <%= finding[:file] %>
+                    <span class="ml-3 font-bold">LINE:</span> <%= finding[:line_number] %>
+                  </div>
+                </div>
+
+                <div class="mb-2">
+                  <div class="text-xs font-bold text-green-600 font-mono mb-1">DESCRIPTION:</div>
+                  <div class="text-sm text-yellow-400 font-mono"><%= finding[:description] %></div>
+                </div>
+
+                <div class="mb-2">
+                  <div class="text-xs font-bold text-green-600 font-mono mb-1">CODE:</div>
+                  <div class="text-xs text-red-300 bg-gray-900 p-2 rounded border border-red-900 font-mono overflow-x-auto">
+                    <%= finding[:line_content] %>
+                  </div>
+                </div>
+
+                <% if finding[:code_snippet] %>
+                  <details class="mt-2">
+                    <summary class="text-xs text-green-500 font-mono cursor-pointer hover:text-green-400">
+                      View Context
+                    </summary>
+                    <div class="mt-2 text-xs text-green-400 bg-gray-900 p-3 rounded border border-green-900 font-mono overflow-x-auto">
+                      <pre class="whitespace-pre"><%= finding[:code_snippet] %></pre>
+                    </div>
+                  </details>
+                <% end %>
+              </div>
+
+              <% if idx == 2 && findings.length > 3 %>
+                <button onclick="toggleFindings(this)" class="w-full py-2 text-xs text-green-400 hover:text-green-300 font-mono border border-green-700 rounded hover:bg-gray-800 transition-colors">
+                  ▼ Show <%= findings.length - 3 %> more <%= 'finding'.pluralize(findings.length - 3) %>
+                </button>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% else %>
+  <div class="bg-green-900 border-2 border-green-500 text-green-300 px-4 py-3 rounded font-mono text-sm text-center">
+    <span class="font-bold text-xl">✓</span><br>
+    <span class="font-bold">NO SECURITY ISSUES FOUND</span><br>
+    <span class="text-xs">No common vulnerabilities detected in scanned files!</span>
+  </div>
+<% end %>
+
+<script>
+  function toggleFindings(button) {
+    const container = button.closest('.space-y-4, .space-y-3');
+    const collapsed = container.querySelectorAll('.finding-collapsed');
+
+    collapsed.forEach(el => {
+      el.classList.remove('finding-collapsed');
+      el.style.display = 'block';
+    });
+
+    button.style.display = 'none';
+  }
+</script>
+
+<style>
+  .finding-collapsed {
+    display: none;
+  }
+</style>

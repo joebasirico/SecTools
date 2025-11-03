@@ -1,0 +1,59 @@
+# Path Traversal Detection Rules
+# These patterns detect potential path traversal vulnerabilities
+
+name: Path Traversal
+severity: HIGH
+description: Detects unsafe file operations that may allow path traversal attacks
+
+patterns:
+  - description: Reading file from user input (Ruby)
+    languages: [ruby]
+    regex: 'File\.read\(params'
+    example: 'File.read(params[:filename])'
+    recommendation: Validate and sanitize file paths, use allowlist approach
+
+  - description: Opening file from user input (Ruby)
+    languages: [ruby]
+    regex: 'File\.open\(params'
+    example: 'File.open(params[:file])'
+    recommendation: Validate paths against allowlist, prevent .. sequences
+
+  - description: Reading file from request (Node.js)
+    languages: [javascript, typescript]
+    regex: 'fs\.readFile\([^,]*req\.'
+    example: 'fs.readFile(req.query.file)'
+    recommendation: Validate file paths, use path.join with safe base directory
+
+  - description: Opening file from user input (PHP)
+    languages: [php]
+    regex: 'fopen\(\$_(GET|POST|REQUEST|COOKIE)'
+    example: 'fopen($_GET["file"])'
+    recommendation: Use basename() and validate against allowlist
+
+  - description: Include file from user input (PHP)
+    languages: [php]
+    regex: '(include|require)(_once)?\s*\(?[\s]*\$_(GET|POST|REQUEST|COOKIE)'
+    example: 'include($_GET["page"])'
+    recommendation: Never include files based on user input
+
+  - description: Opening file from request (Python)
+    languages: [python]
+    regex: 'open\([^,)]*request\.'
+    example: 'open(request.args.get("file"))'
+    recommendation: Use os.path.basename and validate against allowlist
+
+  - description: Path join with user input
+    languages: [python]
+    regex: 'os\.path\.join\([^,)]*request\.'
+    example: 'os.path.join(base_dir, request.args["file"])'
+    recommendation: Validate that result stays within base directory
+
+  - description: File operation with unsanitized params
+    languages: [ruby]
+    regex: '(FileUtils|File)\.(rm|delete|unlink|mv|cp)\(params'
+    example: 'FileUtils.rm(params[:file])'
+    recommendation: Strictly validate file paths before operations
+
+references:
+  - https://owasp.org/www-community/attacks/Path_Traversal
+  - https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html

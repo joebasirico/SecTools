@@ -1,0 +1,71 @@
+# Cross-Site Scripting (XSS) Detection Rules
+# These patterns detect potential XSS vulnerabilities
+
+name: Cross-Site Scripting (XSS)
+severity: HIGH
+description: Detects unescaped user input that may lead to XSS attacks
+
+patterns:
+  - description: Using html_safe on potentially unsafe content
+    languages: [ruby]
+    regex: '\.html_safe(?!\s*\z)'
+    example: 'params[:content].html_safe'
+    recommendation: Only use html_safe on trusted, sanitized content. Use sanitize() helper instead
+
+  - description: Using raw() with params
+    languages: [ruby]
+    regex: 'raw\s*\(?\s*params'
+    example: 'raw(params[:html])'
+    recommendation: Use sanitize() helper or properly escape user input
+
+  - description: Unescaped params in ERB template
+    languages: [ruby]
+    regex: '<%=\s*[^>]*params\['
+    example: '<%= params[:name] %>'
+    recommendation: Ensure proper escaping or use <%= sanitize(...) %>
+
+  - description: Setting innerHTML with variable
+    languages: [javascript, typescript]
+    regex: 'innerHTML\s*=\s*[^''"]*[\w.]+'
+    example: 'element.innerHTML = userInput'
+    recommendation: Use textContent or properly sanitize with DOMPurify
+
+  - description: document.write with variable
+    languages: [javascript, typescript]
+    regex: 'document\.write\([^''"]*[\w.]+'
+    example: 'document.write(userContent)'
+    recommendation: Avoid document.write, use DOM manipulation instead
+
+  - description: jQuery .html() with variable
+    languages: [javascript, typescript]
+    regex: '\.html\([^''"]*[\w.]+'
+    example: '$(".content").html(userInput)'
+    recommendation: Use .text() or sanitize with DOMPurify before using .html()
+
+  - description: Echo user input without escaping (PHP)
+    languages: [php]
+    regex: 'echo\s+\$_(GET|POST|REQUEST|COOKIE)'
+    example: 'echo $_GET["name"]'
+    recommendation: Use htmlspecialchars() or htmlentities()
+
+  - description: Print user input without escaping (PHP)
+    languages: [php]
+    regex: 'print\s+\$_(GET|POST|REQUEST|COOKIE)'
+    example: 'print $_POST["comment"]'
+    recommendation: Use htmlspecialchars() or htmlentities()
+
+  - description: Dangerous v-html usage (Vue.js)
+    languages: [javascript, typescript]
+    regex: 'v-html\s*=\s*[''\"]\{\{[^}]*\}\}[''"\s>]'
+    example: '<div v-html="{{ userContent }}"></div>'
+    recommendation: Avoid v-html with user content, use v-text or sanitize first
+
+  - description: dangerouslySetInnerHTML usage (React)
+    languages: [javascript, typescript]
+    regex: 'dangerouslySetInnerHTML\s*=\s*\{\{__html:'
+    example: '<div dangerouslySetInnerHTML={{__html: userInput}} />'
+    recommendation: Avoid dangerouslySetInnerHTML or use DOMPurify
+
+references:
+  - https://owasp.org/www-community/attacks/xss/
+  - https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html
