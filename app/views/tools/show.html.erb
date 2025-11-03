@@ -50,11 +50,29 @@
                     required: input[:required],
                     class: "w-full px-3 py-2 bg-gray-900 border-2 border-green-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-green-400 font-mono" %>
               <% when :file %>
-                <%= file_field_tag "tool[#{input[:name]}]",
-                    accept: '.lock,.json,.txt',
-                    required: input[:required],
-                    class: "w-full px-3 py-2 bg-gray-900 border-2 border-green-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-green-400 font-mono file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-mono file:bg-green-600 file:text-gray-900 hover:file:bg-green-500 file:cursor-pointer" %>
-                <p class="text-xs text-green-600 mt-1 font-mono"><%= input[:placeholder] %></p>
+                <div class="file-drop-zone border-2 border-dashed border-green-600 rounded-md p-4 text-center transition-all hover:border-green-400 hover:bg-gray-800/50"
+                     data-input-name="tool[<%= input[:name] %>]">
+                  <div class="drop-zone-content">
+                    <div class="mb-2">
+                      <svg class="inline-block h-6 w-6 text-green-500" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                    </div>
+                    <div class="text-sm text-green-400 font-mono mb-2">
+                      <label for="file-upload-<%= input[:name] %>" class="relative cursor-pointer rounded-md font-bold text-green-300 hover:text-green-200">
+                        <span>Click to upload</span>
+                        <%= file_field_tag "tool[#{input[:name]}]",
+                            accept: '.lock,.json,.txt',
+                            required: input[:required],
+                            id: "file-upload-#{input[:name]}",
+                            class: "sr-only" %>
+                      </label>
+                      <span class="text-green-500"> or drag and drop</span>
+                    </div>
+                    <p class="text-xs text-green-600 font-mono"><%= input[:placeholder] %></p>
+                    <p class="file-name-display text-xs text-green-300 font-mono mt-2 hidden"></p>
+                  </div>
+                </div>
               <% when :checkbox %>
                 <div class="flex items-center">
                   <%= check_box_tag "tool[#{input[:name]}]", "1", params.dig(:tool, input[:name]) == "1",
@@ -164,3 +182,94 @@
     end
   end
 %>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const dropZones = document.querySelectorAll('.file-drop-zone');
+
+    dropZones.forEach(dropZone => {
+      const fileInput = dropZone.querySelector('input[type="file"]');
+      const fileNameDisplay = dropZone.querySelector('.file-name-display');
+
+      // Prevent default drag behaviors
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
+      });
+
+      // Highlight drop zone when dragging over it
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+          dropZone.classList.add('border-green-400', 'bg-gray-800');
+          dropZone.classList.remove('border-green-600');
+        }, false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+          dropZone.classList.remove('border-green-400', 'bg-gray-800');
+          dropZone.classList.add('border-green-600');
+        }, false);
+      });
+
+      // Handle dropped files
+      dropZone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+
+        if (files.length > 0) {
+          // Create a new FileList-like object and assign to input
+          const dataTransfer = new DataTransfer();
+          dataTransfer.items.add(files[0]);
+          fileInput.files = dataTransfer.files;
+
+          // Display file name
+          updateFileName(fileInput, fileNameDisplay);
+        }
+      }, false);
+
+      // Handle file selection via click
+      fileInput.addEventListener('change', () => {
+        updateFileName(fileInput, fileNameDisplay);
+      });
+    });
+
+    function preventDefaults(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    function updateFileName(input, display) {
+      if (input.files && input.files.length > 0) {
+        display.textContent = `Selected: ${input.files[0].name}`;
+        display.classList.remove('hidden');
+      } else {
+        display.textContent = '';
+        display.classList.add('hidden');
+      }
+    }
+  });
+</script>
+
+<style>
+  .file-drop-zone.dragover {
+    background-color: rgba(34, 197, 94, 0.1);
+  }
+
+  .file-drop-zone svg {
+    max-width: 48px !important;
+    max-height: 48px !important;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+</style>
