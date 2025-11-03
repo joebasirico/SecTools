@@ -1,0 +1,458 @@
+<!-- Download Buttons -->
+<div class="mb-6 flex items-center justify-between">
+  <h3 class="text-lg font-bold text-green-400 terminal-header flex items-center">
+    <span class="mr-2">📥</span>
+    EXPORT REPORT
+  </h3>
+  <div class="flex gap-3">
+    <button onclick="downloadJSON()" class="px-4 py-2 bg-green-600 hover:bg-green-500 text-gray-900 font-mono text-sm font-bold rounded border-2 border-green-400 transition-colors cursor-pointer">
+      [ JSON ]
+    </button>
+    <button onclick="downloadCSV()" class="px-4 py-2 bg-green-600 hover:bg-green-500 text-gray-900 font-mono text-sm font-bold rounded border-2 border-green-400 transition-colors cursor-pointer">
+      [ CSV ]
+    </button>
+    <button onclick="downloadPDF()" class="px-4 py-2 bg-green-600 hover:bg-green-500 text-gray-900 font-mono text-sm font-bold rounded border-2 border-green-400 transition-colors cursor-pointer">
+      [ PDF ]
+    </button>
+  </div>
+</div>
+
+<script>
+  // Store result data for downloads
+  const resultData = <%= result.to_json.html_safe %>;
+
+  function downloadJSON() {
+    const dataStr = JSON.stringify(resultData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `dep_validator_report_${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function downloadCSV() {
+    let csv = 'Vulnerability Report,' + new Date().toLocaleString() + '\n\n';
+    csv += 'Ecosystem,' + (resultData.ecosystem || '') + '\n';
+    csv += 'Total Dependencies,' + (resultData.total_dependencies || 0) + '\n\n';
+
+    csv += 'SUMMARY\n';
+    csv += 'Critical,' + (resultData.summary?.critical || 0) + '\n';
+    csv += 'High,' + (resultData.summary?.high || 0) + '\n';
+    csv += 'Medium,' + (resultData.summary?.medium || 0) + '\n';
+    csv += 'Low,' + (resultData.summary?.low || 0) + '\n\n';
+
+    if (resultData.vulnerabilities && resultData.vulnerabilities.length > 0) {
+      csv += 'VULNERABILITIES\n';
+      csv += 'ID,Dependency,Version,Severity,CVSS Score,Summary,Fixed Versions\n';
+      resultData.vulnerabilities.forEach(vuln => {
+        csv += `"${vuln.vulnerability_id}","${vuln.dependency}","${vuln.version}","${vuln.severity}","${vuln.cvss_score || 'N/A'}","${(vuln.summary || '').replace(/"/g, '""')}","${(vuln.fixed_versions || []).join(', ')}"\n`;
+      });
+      csv += '\n';
+    }
+
+    if (resultData.recommendations && resultData.recommendations.length > 0) {
+      csv += 'RECOMMENDATIONS\n';
+      csv += 'Dependency,Current Version,Recommended Version,Severity,Vulnerability Count,Command\n';
+      resultData.recommendations.forEach(rec => {
+        csv += `"${rec.dependency}","${rec.current_version}","${rec.recommended_version || 'No fix available'}","${rec.max_severity}","${rec.vulnerability_count}","${rec.command}"\n`;
+      });
+    }
+
+    const dataBlob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `dep_validator_report_${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function downloadPDF() {
+    try {
+      const response = await fetch('<%= download_tool_path('dep_validator', format: :pdf) %>', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ result: resultData })
+      });
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `dep_validator_report_${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('PDF download error:', error);
+      alert('Error generating PDF. Please try again.');
+    }
+  }
+</script>
+
+<% if result[:error] %>
+  <div class="bg-red-900 border-2 border-red-500 text-red-300 px-4 py-3 rounded mb-4 font-mono text-sm">
+    <span class="font-bold">[ERROR]</span> <%= result[:error] %>
+  </div>
+<% end %>
+
+<!-- Summary Dashboard -->
+<div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+  <div class="bg-gray-900 border-2 border-green-600 rounded p-4 text-center">
+    <div class="text-3xl font-bold text-green-400 font-mono"><%= result[:total_dependencies] || 0 %></div>
+    <div class="text-xs text-green-600 font-mono mt-1">TOTAL DEPS</div>
+  </div>
+
+  <div class="bg-gray-900 border-2 <%= result[:summary][:critical] > 0 ? 'border-red-500' : 'border-gray-700' %> rounded p-4 text-center">
+    <div class="text-3xl font-bold <%= result[:summary][:critical] > 0 ? 'text-red-400' : 'text-gray-600' %> font-mono">
+      <%= result[:summary][:critical] || 0 %>
+    </div>
+    <div class="text-xs text-red-600 font-mono mt-1">CRITICAL</div>
+  </div>
+
+  <div class="bg-gray-900 border-2 <%= result[:summary][:high] > 0 ? 'border-orange-500' : 'border-gray-700' %> rounded p-4 text-center">
+    <div class="text-3xl font-bold <%= result[:summary][:high] > 0 ? 'text-orange-400' : 'text-gray-600' %> font-mono">
+      <%= result[:summary][:high] || 0 %>
+    </div>
+    <div class="text-xs text-orange-600 font-mono mt-1">HIGH</div>
+  </div>
+
+  <div class="bg-gray-900 border-2 <%= result[:summary][:medium] > 0 ? 'border-yellow-500' : 'border-gray-700' %> rounded p-4 text-center">
+    <div class="text-3xl font-bold <%= result[:summary][:medium] > 0 ? 'text-yellow-400' : 'text-gray-600' %> font-mono">
+      <%= result[:summary][:medium] || 0 %>
+    </div>
+    <div class="text-xs text-yellow-600 font-mono mt-1">MEDIUM</div>
+  </div>
+
+  <div class="bg-gray-900 border-2 <%= result[:summary][:low] > 0 ? 'border-blue-500' : 'border-gray-700' %> rounded p-4 text-center">
+    <div class="text-3xl font-bold <%= result[:summary][:low] > 0 ? 'text-blue-400' : 'text-gray-600' %> font-mono">
+      <%= result[:summary][:low] || 0 %>
+    </div>
+    <div class="text-xs text-blue-600 font-mono mt-1">LOW</div>
+  </div>
+</div>
+
+<!-- Ecosystem Info -->
+<div class="mb-6 p-3 bg-gray-900 border border-green-700 rounded font-mono text-sm text-green-400">
+  <span class="text-green-600 font-bold">ECOSYSTEM:</span> <%= result[:ecosystem] %>
+</div>
+
+<!-- Recommendations Section -->
+<% if result[:recommendations].present? && result[:recommendations].any? %>
+  <div class="mb-6">
+    <h3 class="text-lg font-bold text-orange-400 mb-3 terminal-header flex items-center">
+      <span class="mr-2">⚠</span>
+      RECOMMENDED FIXES (<%= result[:recommendations].length %>)
+    </h3>
+
+    <div class="space-y-3">
+      <% result[:recommendations].each do |rec| %>
+        <div class="bg-gray-900 border-l-4 <%= severity_border_class(rec[:max_severity]) %> p-4 rounded">
+          <div class="flex items-start justify-between mb-2">
+            <div class="font-bold text-green-300 font-mono"><%= rec[:dependency] %></div>
+            <div class="flex-shrink-0 ml-4">
+              <span class="<%= severity_badge_class(rec[:max_severity]) %>" style="<%= severity_badge_style(rec[:max_severity]) %>">
+                <%= rec[:max_severity] %>
+              </span>
+            </div>
+          </div>
+
+          <div class="text-sm text-green-500 font-mono mb-2">
+            <span class="text-green-700">Current:</span> <%= rec[:current_version] %>
+            <% if rec[:recommended_version] %>
+              <span class="mx-2">→</span>
+              <span class="text-green-700">Upgrade to:</span> <span class="text-green-300 font-bold"><%= rec[:recommended_version] %></span>
+            <% else %>
+              <span class="mx-2 text-red-500">⚠ No fix available</span>
+            <% end %>
+          </div>
+
+          <div class="text-xs text-green-600 font-mono mb-2">
+            <%= rec[:vulnerability_count] %> <%= 'vulnerability'.pluralize(rec[:vulnerability_count]) %> found
+          </div>
+
+          <div class="bg-gray-950 p-2 rounded border border-green-900 font-mono text-xs text-green-400">
+            <span class="text-green-600">$</span> <%= rec[:command] %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<!-- Dependency Tree -->
+<div class="mb-6">
+  <h3 class="text-lg font-bold text-green-400 mb-3 terminal-header flex items-center">
+    <span class="mr-2">▶</span>
+    DEPENDENCY TREE
+  </h3>
+
+  <% if result[:dependency_tree].present? %>
+    <div class="space-y-2">
+      <% result[:dependency_tree].each_with_index do |dep, index| %>
+        <div class="<%= dep[:type] == 'transitive' ? 'ml-8' : '' %>">
+          <div class="bg-gray-900 border-2 <%= dep[:has_vulnerabilities] ? severity_border_class_tree(dep[:max_severity]) : 'border-green-900' %> rounded p-3 <%= dep[:has_vulnerabilities] ? 'hover:border-opacity-100' : '' %> transition-all">
+            <div class="flex items-start justify-between">
+              <div class="flex-1">
+                <div class="flex items-center mb-1">
+                  <% if dep[:type] == 'transitive' %>
+                    <span class="text-gray-600 mr-2 font-mono text-xs">└─</span>
+                  <% end %>
+                  <span class="text-green-600 mr-2 font-mono text-xs">
+                    <%= dep[:has_vulnerabilities] ? '⚠' : '✓' %>
+                  </span>
+                  <span class="font-bold <%= dep[:has_vulnerabilities] ? 'text-red-300' : 'text-green-400' %> font-mono">
+                    <%= dep[:name] %>
+                  </span>
+                  <span class="ml-2 text-green-600 text-sm font-mono">
+                    @ <%= dep[:version] %>
+                  </span>
+                  <span class="ml-2 px-2 py-0.5 text-xs font-mono <%= dep[:type] == 'direct' ? 'bg-green-900 text-green-400' : 'bg-gray-800 text-gray-500' %> rounded">
+                    <%= dep[:type] %>
+                  </span>
+                </div>
+
+                <% if dep[:has_vulnerabilities] %>
+                  <div class="<%= dep[:type] == 'transitive' ? 'ml-8' : 'ml-5' %> mt-2 text-xs font-mono">
+                    <span class="text-red-400 font-bold">
+                      <%= dep[:vulnerability_count] %> <%= 'vulnerability'.pluralize(dep[:vulnerability_count]) %>
+                    </span>
+                    <span class="text-gray-600 mx-2">|</span>
+                    <span class="text-gray-500">
+                      IDs:
+                      <% dep[:vulnerabilities].each_with_index do |vuln_id, idx| %>
+                        <a href="https://osv.dev/vulnerability/<%= vuln_id %>" target="_blank" class="text-blue-400 hover:text-blue-300 underline"><%= vuln_id %></a><%= idx < dep[:vulnerabilities].length - 1 ? ', ' : '' %>
+                      <% end %>
+                    </span>
+                  </div>
+                <% end %>
+              </div>
+
+              <% if dep[:has_vulnerabilities] %>
+                <div class="flex-shrink-0 ml-4">
+                  <span class="<%= severity_badge_class_from_rank(dep[:max_severity]) %>" style="<%= severity_badge_style_from_rank(dep[:max_severity]) %>">
+                    <%= severity_label_from_rank(dep[:max_severity]) %>
+                  </span>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="text-green-600 font-mono text-sm p-4 bg-gray-900 border border-green-900 rounded">
+      No dependencies found in uploaded file.
+    </div>
+  <% end %>
+</div>
+
+<!-- Detailed Vulnerabilities -->
+<% if result[:vulnerabilities].present? && result[:vulnerabilities].any? %>
+  <div>
+    <h3 class="text-lg font-bold text-red-400 mb-3 terminal-header flex items-center">
+      <span class="mr-2">🔍</span>
+      VULNERABILITY DETAILS (<%= result[:vulnerabilities].length %>)
+    </h3>
+
+    <div class="space-y-4">
+      <% result[:vulnerabilities].each do |vuln| %>
+        <div class="bg-gray-900 border-2 <%= severity_border_class(vuln[:severity]) %> rounded p-4">
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <div class="font-bold text-red-300 font-mono text-lg">
+                <a href="https://osv.dev/vulnerability/<%= vuln[:vulnerability_id] %>" target="_blank" class="text-red-300 hover:text-red-200 underline">
+                  <%= vuln[:vulnerability_id] %>
+                </a>
+              </div>
+              <div class="text-sm text-green-500 font-mono mt-1">
+                <%= vuln[:dependency] %> @ <%= vuln[:version] %>
+              </div>
+            </div>
+            <div class="flex-shrink-0 ml-4">
+              <span class="<%= severity_badge_class(vuln[:severity]) %>" style="<%= severity_badge_style(vuln[:severity]) %>">
+                <%= vuln[:severity] %>
+                <% if vuln[:cvss_score] %>
+                  <span class="ml-1">(<%= vuln[:cvss_score] %>)</span>
+                <% end %>
+              </span>
+            </div>
+          </div>
+
+          <% if vuln[:summary] %>
+            <div class="mb-3">
+              <div class="text-xs font-bold text-green-600 font-mono mb-1">SUMMARY:</div>
+              <div class="text-sm text-green-400 font-mono"><%= vuln[:summary] %></div>
+            </div>
+          <% end %>
+
+          <% if vuln[:details] %>
+            <div class="mb-3">
+              <div class="text-xs font-bold text-green-600 font-mono mb-1">DETAILS:</div>
+              <div class="text-xs text-green-500 bg-gray-950 p-3 rounded border border-green-900 max-h-64 overflow-y-auto markdown-content"
+                   data-markdown="<%= Base64.strict_encode64(vuln[:details]) %>">
+                <!-- Markdown will be rendered here -->
+              </div>
+            </div>
+          <% end %>
+
+          <% if vuln[:fixed_versions].present? && vuln[:fixed_versions].any? %>
+            <div class="mb-3">
+              <div class="text-xs font-bold text-green-600 font-mono mb-1">FIXED IN:</div>
+              <div class="text-sm text-green-300 font-mono">
+                <%= vuln[:fixed_versions].join(', ') %>
+              </div>
+            </div>
+          <% end %>
+
+          <% if vuln[:references].present? && vuln[:references].any? %>
+            <div>
+              <div class="text-xs font-bold text-green-600 font-mono mb-1">REFERENCES:</div>
+              <div class="text-xs space-y-1">
+                <% vuln[:references].first(3).each do |ref| %>
+                  <div class="font-mono">
+                    <a href="<%= ref[:url] %>" target="_blank" class="text-blue-400 hover:text-blue-300 underline">
+                      <%= ref[:url] %>
+                    </a>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% else %>
+  <div class="bg-green-900 border-2 border-green-500 text-green-300 px-4 py-3 rounded font-mono text-sm text-center">
+    <span class="font-bold text-xl">✓</span><br>
+    <span class="font-bold">NO VULNERABILITIES FOUND</span><br>
+    <span class="text-xs">All dependencies are secure!</span>
+  </div>
+<% end %>
+
+<script type="module">
+  import markdownit from 'markdown-it';
+  import DOMPurify from 'dompurify';
+
+  // Initialize markdown-it with safe defaults
+  const md = markdownit({
+    html: false,        // Don't allow raw HTML
+    linkify: true,      // Auto-convert URLs to links
+    typographer: true,  // Enable smart quotes and other typographic replacements
+    breaks: true        // Convert line breaks to <br>
+  });
+
+  // Render all markdown content
+  document.addEventListener('DOMContentLoaded', () => {
+    const markdownElements = document.querySelectorAll('.markdown-content[data-markdown]');
+
+    markdownElements.forEach(element => {
+      try {
+        // Decode the base64-encoded markdown
+        const encodedMarkdown = element.getAttribute('data-markdown');
+        const markdown = atob(encodedMarkdown);
+
+        // Render markdown to HTML
+        const renderedHTML = md.render(markdown);
+
+        // Sanitize the HTML with DOMPurify
+        const cleanHTML = DOMPurify.sanitize(renderedHTML, {
+          ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'code', 'pre', 'a', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote'],
+          ALLOWED_ATTR: ['href', 'target', 'rel'],
+          ALLOW_DATA_ATTR: false
+        });
+
+        // Insert sanitized HTML
+        element.innerHTML = cleanHTML;
+      } catch (error) {
+        console.error('Error rendering markdown:', error);
+        // Fall back to plain text if rendering fails
+        element.textContent = element.getAttribute('data-markdown');
+      }
+    });
+  });
+</script>
+
+<style>
+  /* Markdown content styling */
+  .markdown-content p {
+    margin-bottom: 0.75rem;
+  }
+
+  .markdown-content p:last-child {
+    margin-bottom: 0;
+  }
+
+  .markdown-content h1,
+  .markdown-content h2,
+  .markdown-content h3 {
+    color: #4ade80;
+    font-weight: bold;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .markdown-content h1 { font-size: 1.25rem; }
+  .markdown-content h2 { font-size: 1.125rem; }
+  .markdown-content h3 { font-size: 1rem; }
+
+  .markdown-content code {
+    background-color: #1f2937;
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    font-family: 'Courier New', monospace;
+    color: #22c55e;
+  }
+
+  .markdown-content pre {
+    background-color: #111827;
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    overflow-x: auto;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    border: 1px solid #374151;
+  }
+
+  .markdown-content pre code {
+    background-color: transparent;
+    padding: 0;
+  }
+
+  .markdown-content a {
+    color: #60a5fa;
+    text-decoration: underline;
+  }
+
+  .markdown-content a:hover {
+    color: #93c5fd;
+  }
+
+  .markdown-content ul,
+  .markdown-content ol {
+    margin-left: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .markdown-content li {
+    margin-bottom: 0.25rem;
+  }
+
+  .markdown-content blockquote {
+    border-left: 3px solid #22c55e;
+    padding-left: 1rem;
+    margin-left: 0.5rem;
+    margin-bottom: 0.75rem;
+    color: #86efac;
+  }
+
+  .markdown-content strong {
+    color: #4ade80;
+    font-weight: bold;
+  }
+</style>
