@@ -13,7 +13,7 @@ class HashTool
   HASH_ALGORITHMS = OpenSSL::Digest.constants
     .reject { |c| [:Digest, :DigestError].include?(c) }
     .map(&:to_s)
-    .sort
+    .sort unless defined?(HASH_ALGORITHMS)
 
   input_field :input_text,
               type: :text,

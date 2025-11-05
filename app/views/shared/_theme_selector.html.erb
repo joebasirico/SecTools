@@ -1,0 +1,59 @@
+<div class="theme-selector">
+  <label for="theme-select" class="sr-only">Select Theme</label>
+  <select
+    id="theme-select"
+    data-theme-target="selector"
+    data-action="change->theme#change"
+    class="theme-select px-3 py-2 border-2 rounded-md focus:outline-none focus:ring-2 font-mono text-sm cursor-pointer transition-colors"
+  >
+    <option value="hacker">🖥️ Hacker Mode</option>
+    <option value="professional">💼 Professional Mode</option>
+  </select>
+</div>
+
+<style>
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* Hacker theme styling for selector */
+  [data-theme="hacker"] .theme-select {
+    background-color: #111827;
+    border-color: #22c55e;
+    color: #4ade80;
+  }
+
+  [data-theme="hacker"] .theme-select:hover {
+    border-color: #4ade80;
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
+  }
+
+  [data-theme="hacker"] .theme-select:focus {
+    ring-color: #22c55e;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.3);
+  }
+
+  /* Professional theme styling for selector */
+  [data-theme="professional"] .theme-select {
+    background-color: #ffffff;
+    border-color: #d1d5db;
+    color: #111827;
+  }
+
+  [data-theme="professional"] .theme-select:hover {
+    border-color: #2563eb;
+  }
+
+  [data-theme="professional"] .theme-select:focus {
+    ring-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+</style>

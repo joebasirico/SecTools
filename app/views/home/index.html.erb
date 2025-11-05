@@ -1,8 +1,8 @@
-<div class="min-h-screen bg-gray-900">
-  <div class="container mx-auto px-4 py-8">
+<div class="min-h-screen">
+  <div class="container mx-auto px-4 py-8 pt-20">
     <header class="mb-12 text-center">
       <div class="mb-4">
-        <pre class="text-green-500 text-sm inline-block glitch">
+        <pre class="text-sm inline-block glitch" style="color: var(--color-text-secondary);">
 ╔══════════════════════════════════════════════════════════════════════╗
 ║  ███████╗███████╗ ██████╗████████╗ ██████╗  ██████╗ ██╗     ███████╗ ║
 ║  ██╔════╝██╔════╝██╔════╝╚══██╔══╝██╔═══██╗██╔═══██╗██║     ██╔════╝ ║
@@ -13,14 +13,18 @@
 ╚══════════════════════════════════════════════════════════════════════╝
         </pre>
       </div>
-      <h1 class="text-4xl font-bold text-green-400 mb-3 terminal-header glitch">
-        [SECURITY TESTING FRAMEWORK]
+      <h1 class="text-4xl font-bold mb-3 theme-header glitch" style="color: var(--color-text-primary);">
+        <span data-theme="hacker">[SECURITY TESTING FRAMEWORK]</span>
+        <span data-theme="professional" style="display: none;">Security Testing Framework</span>
       </h1>
-      <p class="text-lg text-green-500 font-mono">
-        > Application & Product Security Testing Arsenal_
+      <p class="text-lg" style="color: var(--color-text-secondary); font-family: var(--font-family);">
+        <span data-theme="hacker">> Application & Product Security Testing Arsenal_</span>
+        <span data-theme="professional" style="display: none;">Application & Product Security Testing Arsenal</span>
       </p>
-      <div class="mt-4 text-green-600 text-sm font-mono">
-        <span class="animate-pulse">█</span> SYSTEM READY | <%= @categories.length %> CATEGORIES | <%= ToolRegistry.all.length %> TOOLS LOADED
+      <div class="mt-4 text-sm" style="color: var(--color-text-tertiary); font-family: var(--font-family);">
+        <span class="animate-pulse" data-theme="hacker">█</span>
+        <span data-theme="hacker">SYSTEM READY | <%= @categories.length %> CATEGORIES | <%= ToolRegistry.all.length %> TOOLS LOADED</span>
+        <span data-theme="professional" style="display: none;"><%= @categories.length %> Categories | <%= ToolRegistry.all.length %> Tools Available</span>
       </div>
     </header>
 
@@ -28,31 +32,35 @@
       <% @categories.each do |category| %>
         <section class="mb-12">
           <div class="flex items-center mb-6">
-            <div class="h-px bg-green-500 flex-grow"></div>
-            <h2 class="text-2xl font-bold text-green-400 px-4 terminal-header">
-              [ <%= category.upcase %> ]
+            <div class="h-px flex-grow" style="background-color: var(--color-primary);"></div>
+            <h2 class="text-2xl font-bold px-4 theme-header" style="color: var(--color-text-primary);">
+              <span data-theme="hacker">[ <%= category.upcase %> ]</span>
+              <span data-theme="professional" style="display: none;"><%= category.titleize %></span>
             </h2>
-            <div class="h-px bg-green-500 flex-grow"></div>
+            <div class="h-px flex-grow" style="background-color: var(--color-primary);"></div>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <% @tools_by_category[category].each do |tool_class| %>
-              <div class="hacker-card scan-line">
+              <div class="theme-card scan-line">
                 <div class="flex items-start mb-3">
-                  <span class="text-green-500 text-2xl mr-2">▶</span>
-                  <h3 class="text-xl font-bold text-green-300 terminal-header">
+                  <span class="text-2xl mr-2" style="color: var(--color-text-secondary);" data-theme="hacker">▶</span>
+                  <span class="text-2xl mr-2" style="color: var(--color-primary); display: none;" data-theme="professional">●</span>
+                  <h3 class="text-xl font-bold theme-header" style="color: var(--color-text-tertiary);">
                     <%= tool_class.tool_name %>
                   </h3>
                 </div>
-                <p class="text-green-500 mb-4 text-sm font-mono leading-relaxed">
+                <p class="mb-4 text-sm leading-relaxed" style="color: var(--color-text-secondary); font-family: var(--font-family);">
                   <%= tool_class.tool_description %>
                 </p>
-                <div class="border-t border-green-700 pt-4">
+                <div class="pt-4" style="border-top: 1px solid var(--color-border);">
                   <%= link_to tool_path(tool_class.name.underscore.gsub('_tool', '')),
-                      class: "inline-flex items-center text-green-400 hover:text-green-300 font-mono text-sm font-bold transition-colors" do %>
-                    <span class="mr-2">></span>
-                    <span class="underline">EXECUTE TOOL</span>
-                    <span class="ml-2 animate-pulse">█</span>
+                      class: "inline-flex items-center text-sm font-bold transition-colors theme-link" do %>
+                    <span class="mr-2" data-theme="hacker">></span>
+                    <span class="underline" data-theme="hacker">EXECUTE TOOL</span>
+                    <span class="underline" data-theme="professional" style="display: none;">Launch Tool</span>
+                    <span class="ml-2 animate-pulse" data-theme="hacker">█</span>
+                    <span class="ml-2" data-theme="professional" style="display: none;">→</span>
                   <% end %>
                 </div>
               </div>
@@ -62,16 +70,23 @@
       <% end %>
     <% else %>
       <div class="text-center py-12">
-        <div class="hacker-card inline-block">
-          <p class="text-xl text-green-400 mb-2 font-mono">[!] NO TOOLS DETECTED</p>
-          <p class="text-green-600 font-mono text-sm">Initialize tools in <code class="text-green-500">/app/tools/</code></p>
+        <div class="theme-card inline-block">
+          <p class="text-xl mb-2" style="color: var(--color-text-primary); font-family: var(--font-family);">
+            <span data-theme="hacker">[!] NO TOOLS DETECTED</span>
+            <span data-theme="professional" style="display: none;">No Tools Detected</span>
+          </p>
+          <p class="text-sm" style="color: var(--color-text-tertiary); font-family: var(--font-family);">
+            <span data-theme="hacker">Initialize tools in <code style="color: var(--color-text-secondary);">/app/tools/</code></span>
+            <span data-theme="professional" style="display: none;">Initialize tools in <code style="color: var(--color-primary);">/app/tools/</code></span>
+          </p>
         </div>
       </div>
     <% end %>
 
-    <footer class="mt-16 text-center border-t border-green-900 pt-8">
-      <p class="text-green-700 text-xs font-mono">
-        [ POWERED BY RUBY ON RAILS <%= Rails.version %> ] | [ SECURE. TEST. REPEAT. ]
+    <footer class="mt-16 text-center pt-8" style="border-top: 1px solid var(--color-border);">
+      <p class="text-xs" style="color: var(--color-text-muted); font-family: var(--font-family);">
+        <span data-theme="hacker">[ POWERED BY RUBY ON RAILS <%= Rails.version %> ] | [ SECURE. TEST. REPEAT. ]</span>
+        <span data-theme="professional" style="display: none;">Powered by Ruby on Rails <%= Rails.version %> • Secure. Test. Repeat.</span>
       </p>
     </footer>
   </div>

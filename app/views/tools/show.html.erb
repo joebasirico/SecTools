@@ -1,32 +1,32 @@
-<div class="min-h-screen bg-gray-900">
+<div class="min-h-screen" style="background-color: var(--color-bg-primary);">
   <div class="container mx-auto px-4 py-8 max-w-4xl">
     <div class="mb-6">
-      <%= link_to root_path, class: "inline-flex items-center text-green-400 hover:text-green-300 font-mono text-sm transition-colors" do %>
+      <%= link_to root_path, class: "theme-link inline-flex items-center font-mono text-sm transition-colors" do %>
         <span class="mr-2">←</span>
         <span>BACK TO ARSENAL</span>
       <% end %>
     </div>
 
     <% if @tool_class %>
-      <header class="mb-8 hacker-card">
+      <header class="mb-8 theme-card">
         <div class="flex items-center mb-3">
-          <span class="text-green-500 text-2xl mr-3">▶</span>
-          <h1 class="text-3xl font-bold text-green-300 terminal-header"><%= @tool_class.tool_name %></h1>
+          <span class="text-2xl mr-3" style="color: var(--color-primary);">▶</span>
+          <h1 class="text-3xl font-bold theme-header" style="color: var(--color-text-primary);"><%= @tool_class.tool_name %></h1>
         </div>
-        <p class="text-green-500 mb-3 font-mono text-sm"><%= @tool_class.tool_description %></p>
-        <div class="inline-block px-3 py-1 bg-gray-900 border border-green-600 rounded text-green-400 text-xs font-mono">
+        <p class="mb-3 font-mono text-sm" style="color: var(--color-text-secondary);"><%= @tool_class.tool_description %></p>
+        <div class="inline-block px-3 py-1 border rounded text-xs font-mono" style="background-color: var(--color-bg-secondary); border-color: var(--color-border); color: var(--color-text-primary);">
           [ <%= @tool_class.tool_category.upcase %> ]
         </div>
       </header>
 
       <% if flash[:alert] %>
-        <div class="bg-red-900 border-2 border-red-500 text-red-300 px-4 py-3 rounded mb-6 font-mono text-sm">
+        <div class="border-2 px-4 py-3 rounded mb-6 font-mono text-sm" style="background-color: var(--color-error); border-color: var(--color-error); color: var(--color-bg-primary); opacity: 0.9;">
           <span class="font-bold">[ERROR]</span> <%= flash[:alert] %>
         </div>
       <% end %>
 
-      <div class="hacker-card mb-6">
-        <h2 class="text-xl font-bold text-green-400 mb-4 terminal-header flex items-center">
+      <div class="theme-card mb-6">
+        <h2 class="text-xl font-bold mb-4 theme-header flex items-center" style="color: var(--color-text-primary);">
           <span class="mr-2">▶</span>
           INPUT PARAMETERS
         </h2>
@@ -35,10 +35,10 @@
 
           <% @tool_class.tool_inputs.each do |input| %>
             <div>
-              <label class="block text-sm font-bold text-green-400 mb-2 font-mono">
+              <label class="block text-sm font-bold mb-2 font-mono" style="color: var(--color-text-primary);">
                 > <%= input[:label] %>
                 <% if input[:required] %>
-                  <span class="text-red-500">*</span>
+                  <span class="text-error">*</span>
                 <% end %>
               </label>
 
@@ -48,18 +48,19 @@
                     type: 'password',
                     placeholder: input[:placeholder],
                     required: input[:required],
-                    class: "w-full px-3 py-2 bg-gray-900 border-2 border-green-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-green-400 font-mono" %>
+                    class: "theme-input w-full" %>
               <% when :file %>
-                <div class="file-drop-zone border-2 border-dashed border-green-600 rounded-md p-4 text-center transition-all hover:border-green-400 hover:bg-gray-800/50"
+                <div class="file-drop-zone border-2 border-dashed rounded-md p-4 text-center transition-all"
+                     style="border-color: var(--color-border);"
                      data-input-name="tool[<%= input[:name] %>]">
                   <div class="drop-zone-content">
                     <div class="mb-2">
-                      <svg class="inline-block h-6 w-6 text-green-500" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                      <svg class="inline-block h-6 w-6" style="color: var(--color-primary);" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
                         <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                       </svg>
                     </div>
-                    <div class="text-sm text-green-400 font-mono mb-2">
-                      <label for="file-upload-<%= input[:name] %>" class="relative cursor-pointer rounded-md font-bold text-green-300 hover:text-green-200">
+                    <div class="text-sm font-mono mb-2" style="color: var(--color-text-primary);">
+                      <label for="file-upload-<%= input[:name] %>" class="relative cursor-pointer rounded-md font-bold" style="color: var(--color-primary);">
                         <span>Click to upload</span>
                         <%= file_field_tag "tool[#{input[:name]}]",
                             accept: input[:options][:accept] || '*',
@@ -67,42 +68,43 @@
                             id: "file-upload-#{input[:name]}",
                             class: "sr-only" %>
                       </label>
-                      <span class="text-green-500"> or drag and drop</span>
+                      <span style="color: var(--color-text-secondary);"> or drag and drop</span>
                     </div>
-                    <p class="text-xs text-green-600 font-mono"><%= input[:placeholder] %></p>
-                    <p class="file-name-display text-xs text-green-300 font-mono mt-2 hidden"></p>
+                    <p class="text-xs font-mono" style="color: var(--color-text-muted);"><%= input[:placeholder] %></p>
+                    <p class="file-name-display text-xs font-mono mt-2 hidden" style="color: var(--color-text-primary);"></p>
                   </div>
                 </div>
               <% when :checkbox %>
                 <div class="flex items-center">
                   <%= check_box_tag "tool[#{input[:name]}]", "1", params.dig(:tool, input[:name]) == "1",
-                      class: "w-5 h-5 bg-gray-900 border-2 border-green-600 rounded focus:ring-2 focus:ring-green-500 text-green-600 cursor-pointer" %>
-                  <span class="ml-3 text-sm text-green-500 font-mono"><%= input[:placeholder] %></span>
+                      class: "w-5 h-5 border-2 rounded focus:ring-2 cursor-pointer",
+                      style: "background-color: var(--color-bg-primary); border-color: var(--color-border); color: var(--color-primary);" %>
+                  <span class="ml-3 text-sm font-mono" style="color: var(--color-text-secondary);"><%= input[:placeholder] %></span>
                 </div>
               <% when :select %>
                 <%= select_tag "tool[#{input[:name]}]",
                     options_for_select(input[:options][:options] || [], params.dig(:tool, input[:name])),
                     prompt: input[:placeholder],
                     required: input[:required],
-                    class: "w-full px-3 py-2 bg-gray-900 border-2 border-green-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-green-400 font-mono cursor-pointer" %>
+                    class: "theme-input w-full cursor-pointer" %>
               <% when :text, :url %>
                 <%= text_area_tag "tool[#{input[:name]}]", params.dig(:tool, input[:name]),
                     placeholder: input[:placeholder],
                     required: input[:required],
                     rows: 3,
-                    class: "w-full px-3 py-2 bg-gray-900 border-2 border-green-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-green-400 font-mono" %>
+                    class: "theme-input w-full" %>
               <% else %>
                 <%= text_field_tag "tool[#{input[:name]}]", params.dig(:tool, input[:name]),
                     placeholder: input[:placeholder],
                     required: input[:required],
-                    class: "w-full px-3 py-2 bg-gray-900 border-2 border-green-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-green-400 font-mono" %>
+                    class: "theme-input w-full" %>
               <% end %>
             </div>
           <% end %>
 
           <div class="pt-2">
             <%= submit_tag "[ EXECUTE ANALYSIS ]",
-                class: "w-full hacker-button cursor-pointer font-mono text-sm tracking-wider" %>
+                class: "w-full theme-button cursor-pointer font-mono text-sm tracking-wider" %>
           </div>
         <% end %>
       </div>
@@ -110,20 +112,20 @@
       <!-- Debug: @result present? <%= @result.present? %>, @formatted_result present? <%= @formatted_result.present? %> -->
 
       <!-- Loading Spinner -->
-      <div id="loading-spinner" class="hacker-card hidden" style="display: none;">
+      <div id="loading-spinner" class="theme-card hidden" style="display: none;">
         <div class="text-center py-12">
           <div class="inline-block relative">
             <!-- Animated spinner -->
-            <div class="w-20 h-20 border-4 border-green-900 border-t-green-400 rounded-full animate-spin"></div>
+            <div class="w-20 h-20 border-4 rounded-full animate-spin" style="border-color: var(--color-bg-tertiary); border-top-color: var(--color-primary);"></div>
             <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-              <svg class="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-8 h-8" style="color: var(--color-primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
               </svg>
             </div>
           </div>
-          <div class="mt-6 text-green-400 font-mono">
+          <div class="mt-6 font-mono" style="color: var(--color-text-primary);">
             <div class="text-xl font-bold mb-2">[ ANALYZING... ]</div>
-            <div class="text-sm text-green-600">
+            <div class="text-sm" style="color: var(--color-text-muted);">
               <span id="loading-message">Executing security scan</span>
               <span class="loading-dots">
                 <span class="dot-1">.</span>
@@ -132,7 +134,7 @@
               </span>
             </div>
             <% if @tool_class.name == 'SslSecurityTesterTool' %>
-              <div class="mt-4 text-xs text-green-700 space-y-1">
+              <div class="mt-4 text-xs space-y-1" style="color: var(--color-text-muted);">
                 <div>→ Testing TLS/SSL protocols</div>
                 <div>→ Enumerating cipher suites</div>
                 <div>→ Analyzing certificate</div>
@@ -144,8 +146,8 @@
       </div>
 
       <% if @result.present? %>
-        <div class="hacker-card" id="results-container" style="display: block;">
-          <h2 class="text-xl font-bold text-green-400 mb-4 terminal-header flex items-center">
+        <div class="theme-card" id="results-container" style="display: block;">
+          <h2 class="text-xl font-bold mb-4 theme-header flex items-center" style="color: var(--color-text-primary);">
             <span class="mr-2">▶</span>
             SCAN RESULTS
           </h2>
@@ -159,11 +161,11 @@
           <% elsif @result.is_a?(Hash) %>
             <div class="space-y-4">
               <% @result.each do |key, value| %>
-                <div class="border-b border-green-900 pb-3">
-                  <dt class="text-xs font-bold text-green-600 mb-2 font-mono uppercase tracking-wider">
+                <div class="border-b pb-3" style="border-color: var(--color-border);">
+                  <dt class="text-xs font-bold mb-2 font-mono uppercase tracking-wider" style="color: var(--color-text-muted);">
                     > <%= key.to_s.gsub('_', ' ') %>
                   </dt>
-                  <dd class="text-green-400 font-mono text-sm">
+                  <dd class="font-mono text-sm" style="color: var(--color-text-primary);">
                     <% if value.is_a?(Array) %>
                       <ul class="space-y-2 ml-4">
                         <% value.each do |item| %>
@@ -174,7 +176,7 @@
                         <% end %>
                       </ul>
                     <% elsif value.is_a?(Hash) %>
-                      <div class="ml-4 bg-gray-900 p-3 rounded border border-green-700">
+                      <div class="ml-4 p-3 rounded border" style="background-color: var(--color-bg-secondary); border-color: var(--color-border);">
                         <%= render_hash(value) %>
                       </div>
                     <% else %>
@@ -187,7 +189,7 @@
               <% end %>
             </div>
           <% else %>
-            <pre class="bg-gray-900 p-4 rounded border-2 border-green-700 overflow-x-auto text-green-400 font-mono text-sm"><%= @formatted_result %></pre>
+            <pre class="p-4 rounded border-2 overflow-x-auto font-mono text-sm" style="background-color: var(--color-bg-secondary); border-color: var(--color-border); color: var(--color-text-primary);"><%= @formatted_result %></pre>
           <% end %>
         </div>
       <% end %>
@@ -219,8 +221,8 @@
     content_tag(:div, class: 'space-y-1') do
       hash.map do |k, v|
         content_tag(:div, class: 'flex') do
-          concat content_tag(:span, "#{k.to_s.gsub('_', ' ')}: ", class: 'font-bold text-green-600 mr-2')
-          concat content_tag(:span, v.is_a?(Hash) || v.is_a?(Array) ? v.inspect : v.to_s, class: 'text-green-400')
+          concat content_tag(:span, "#{k.to_s.gsub('_', ' ')}: ", class: 'font-bold mr-2', style: 'color: var(--color-text-muted);')
+          concat content_tag(:span, v.is_a?(Hash) || v.is_a?(Array) ? v.inspect : v.to_s, style: 'color: var(--color-text-primary);')
         end
       end.join.html_safe
     end
@@ -270,15 +272,15 @@
       // Highlight drop zone when dragging over it
       ['dragenter', 'dragover'].forEach(eventName => {
         dropZone.addEventListener(eventName, () => {
-          dropZone.classList.add('border-green-400', 'bg-gray-800');
-          dropZone.classList.remove('border-green-600');
+          dropZone.style.borderColor = 'var(--color-primary-hover)';
+          dropZone.style.backgroundColor = 'var(--color-bg-secondary)';
         }, false);
       });
 
       ['dragleave', 'drop'].forEach(eventName => {
         dropZone.addEventListener(eventName, () => {
-          dropZone.classList.remove('border-green-400', 'bg-gray-800');
-          dropZone.classList.add('border-green-600');
+          dropZone.style.borderColor = 'var(--color-border)';
+          dropZone.style.backgroundColor = '';
         }, false);
       });
 

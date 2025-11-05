@@ -1,13 +1,216 @@
 @import "tailwindcss";
 
+/* ============================================================================
+   THEME SYSTEM - CSS Custom Properties
+   ============================================================================ */
+
 @layer base {
+  /* Hacker Theme (Dark) - Default */
+  [data-theme="hacker"] {
+    /* Backgrounds */
+    --color-bg-primary: #111827;        /* gray-900 */
+    --color-bg-secondary: #1f2937;      /* gray-800 */
+    --color-bg-tertiary: #030712;       /* gray-950 */
+
+    /* Text Colors */
+    --color-text-primary: #4ade80;      /* green-400 */
+    --color-text-secondary: #22c55e;    /* green-500 */
+    --color-text-tertiary: #86efac;     /* green-300 */
+    --color-text-muted: #16a34a;        /* green-600 */
+
+    /* Interactive Elements */
+    --color-primary: #22c55e;           /* green-500 */
+    --color-primary-hover: #4ade80;     /* green-400 */
+    --color-border: #22c55e;            /* green-500 */
+    --color-border-hover: #4ade80;      /* green-400 */
+
+    /* Semantic Colors */
+    --color-success: #4ade80;           /* green-400 */
+    --color-warning: #fbbf24;           /* yellow-400 */
+    --color-error: #f87171;             /* red-400 */
+    --color-info: #60a5fa;              /* blue-400 */
+
+    /* Shadows & Effects */
+    --shadow-sm: 0 0 10px rgba(34, 197, 94, 0.2);
+    --shadow-md: 0 0 15px rgba(34, 197, 94, 0.3);
+    --shadow-lg: 0 0 20px rgba(34, 197, 94, 0.4);
+    --glow-text: 0 0 10px rgba(34, 197, 94, 0.8);
+
+    /* Typography */
+    --font-family: 'Courier New', monospace;
+    --font-size-base: 1rem;
+
+    /* Component Specific */
+    --button-bg: #16a34a;               /* green-600 */
+    --button-text: #111827;             /* gray-900 */
+    --button-hover-bg: #22c55e;         /* green-500 */
+    --card-bg: #1f2937;                 /* gray-800 */
+  }
+
+  /* Professional Theme (Light) */
+  [data-theme="professional"] {
+    /* Backgrounds */
+    --color-bg-primary: #ffffff;        /* white */
+    --color-bg-secondary: #f9fafb;      /* gray-50 */
+    --color-bg-tertiary: #f3f4f6;       /* gray-100 */
+
+    /* Text Colors */
+    --color-text-primary: #111827;      /* gray-900 */
+    --color-text-secondary: #374151;    /* gray-700 */
+    --color-text-tertiary: #6b7280;     /* gray-500 */
+    --color-text-muted: #9ca3af;        /* gray-400 */
+
+    /* Interactive Elements */
+    --color-primary: #2563eb;           /* blue-600 */
+    --color-primary-hover: #1d4ed8;     /* blue-700 */
+    --color-border: #d1d5db;            /* gray-300 */
+    --color-border-hover: #2563eb;      /* blue-600 */
+
+    /* Semantic Colors */
+    --color-success: #10b981;           /* green-500 */
+    --color-warning: #f59e0b;           /* amber-500 */
+    --color-error: #ef4444;             /* red-500 */
+    --color-info: #3b82f6;              /* blue-500 */
+
+    /* Shadows & Effects */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    --glow-text: none;
+
+    /* Typography */
+    --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-size-base: 1rem;
+
+    /* Component Specific */
+    --button-bg: #2563eb;               /* blue-600 */
+    --button-text: #ffffff;             /* white */
+    --button-hover-bg: #1d4ed8;         /* blue-700 */
+    --card-bg: #ffffff;                 /* white */
+  }
+
+  /* Apply theme variables to body */
   body {
-    @apply bg-gray-900 text-green-400;
-    font-family: 'Courier New', monospace;
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    font-family: var(--font-family);
   }
 }
 
+/* ============================================================================
+   THEME-AWARE COMPONENTS
+   ============================================================================ */
+
 @layer components {
+  /* Card Component - Works with both themes */
+  .theme-card {
+    background-color: var(--card-bg);
+    border: 2px solid var(--color-border);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+  }
+
+  [data-theme="hacker"] .theme-card {
+    box-shadow: var(--shadow-md);
+  }
+
+  [data-theme="hacker"] .theme-card:hover {
+    border-color: var(--color-border-hover);
+    box-shadow: var(--shadow-lg);
+  }
+
+  [data-theme="professional"] .theme-card {
+    box-shadow: var(--shadow-sm);
+    border-color: var(--color-border);
+  }
+
+  [data-theme="professional"] .theme-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--color-border-hover);
+  }
+
+  /* Button Component - Works with both themes */
+  .theme-button {
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    font-weight: 700;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+  }
+
+  .theme-button:hover {
+    background-color: var(--button-hover-bg);
+  }
+
+  [data-theme="hacker"] .theme-button {
+    border-color: var(--color-primary-hover);
+  }
+
+  [data-theme="professional"] .theme-button {
+    box-shadow: var(--shadow-sm);
+  }
+
+  [data-theme="professional"] .theme-button:hover {
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Link Component - Works with both themes */
+  .theme-link {
+    color: var(--color-primary);
+    text-decoration: underline;
+    transition: color 0.2s ease;
+  }
+
+  .theme-link:hover {
+    color: var(--color-primary-hover);
+  }
+
+  /* Header Component - Works with both themes */
+  .theme-header {
+    color: var(--color-text-primary);
+    font-weight: 700;
+  }
+
+  [data-theme="hacker"] .theme-header {
+    font-family: var(--font-family);
+    letter-spacing: 0.05em;
+  }
+
+  [data-theme="professional"] .theme-header {
+    letter-spacing: -0.025em;
+  }
+
+  /* Input/Select Components - Works with both themes */
+  .theme-input {
+    background-color: var(--color-bg-primary);
+    border: 2px solid var(--color-border);
+    color: var(--color-text-primary);
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    font-family: var(--font-family);
+    transition: all 0.2s ease;
+  }
+
+  .theme-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+  }
+
+  [data-theme="hacker"] .theme-input:focus {
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.3);
+  }
+
+  [data-theme="professional"] .theme-input:focus {
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+
+  /* ========================================================================
+     LEGACY HACKER THEME COMPONENTS (Kept for backward compatibility)
+     ======================================================================== */
+
   .hacker-card {
     @apply bg-gray-800 border-2 border-green-500 rounded-lg p-6 shadow-lg shadow-green-500/20 hover:shadow-green-500/40 transition-all duration-300 hover:border-green-400;
   }
@@ -29,7 +232,16 @@
   }
 }
 
-@keyframes scan {
+/* ============================================================================
+   THEME-SPECIFIC ANIMATIONS
+   ============================================================================ */
+
+/* Hacker theme glow animation */
+[data-theme="hacker"] .scan-line {
+  animation: scan-hacker 2s linear infinite;
+}
+
+@keyframes scan-hacker {
   0% {
     box-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
   }
@@ -41,6 +253,91 @@
   }
 }
 
-.glitch {
-  text-shadow: 0 0 10px rgba(34, 197, 94, 0.8);
+/* Professional theme subtle pulse */
+[data-theme="professional"] .scan-line {
+  animation: scan-professional 2s ease-in-out infinite;
+}
+
+@keyframes scan-professional {
+  0%, 100% {
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  }
+  50% {
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.2);
+  }
+}
+
+/* Hacker theme text glow */
+[data-theme="hacker"] .glitch {
+  text-shadow: var(--glow-text);
+}
+
+[data-theme="professional"] .glitch {
+  text-shadow: none;
+  font-weight: 600;
+}
+
+/* ============================================================================
+   SEMANTIC COLOR UTILITIES
+   ============================================================================ */
+
+.text-success {
+  color: var(--color-success);
+}
+
+.text-warning {
+  color: var(--color-warning);
+}
+
+.text-error {
+  color: var(--color-error);
+}
+
+.text-info {
+  color: var(--color-info);
+}
+
+.bg-success {
+  background-color: var(--color-success);
+}
+
+.bg-warning {
+  background-color: var(--color-warning);
+}
+
+.bg-error {
+  background-color: var(--color-error);
+}
+
+.bg-info {
+  background-color: var(--color-info);
+}
+
+/* ============================================================================
+   THEME-SPECIFIC VISIBILITY
+   ============================================================================ */
+
+/* Hide professional-specific elements in hacker theme */
+[data-theme="hacker"] [data-theme="professional"] {
+  display: none !important;
+}
+
+/* Hide hacker-specific elements in professional theme */
+[data-theme="professional"] [data-theme="hacker"] {
+  display: none !important;
+}
+
+/* Show professional-specific elements in professional theme */
+[data-theme="professional"] [data-theme="professional"] {
+  display: inline !important;
+}
+
+/* Show hacker-specific elements in hacker theme */
+[data-theme="hacker"] [data-theme="hacker"] {
+  display: inline !important;
+}
+
+/* Hide ASCII art in professional theme */
+[data-theme="professional"] pre.glitch {
+  display: none;
 }
