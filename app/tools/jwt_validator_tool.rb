@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'base64'
-require 'json'
-require 'openssl'
+require "base64"
+require "json"
+require "openssl"
 
 # JWT Security Validator
 # Validates and analyzes JSON Web Tokens for security vulnerabilities
@@ -12,23 +12,23 @@ class JwtValidatorTool
   configure_tool(
     name: "JWT Security Validator",
     description: "Decode and validate JWTs, check for security vulnerabilities and best practices",
-    category: "Authentication Security"
+    category: "Authentication Security",
   )
 
   input_field :jwt_token, type: :text, label: "JWT Token",
-              placeholder: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U",
-              required: true
+                          placeholder: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U",
+                          required: true
 
   input_field :secret_key, type: :password, label: "Secret Key (Optional - for signature verification)",
-              placeholder: "your-secret-key",
-              required: false
+                           placeholder: "your-secret-key",
+                           required: false
 
   output_format :html, :json
 
   # Insecure algorithms that should not be used
-  INSECURE_ALGORITHMS = ['none', 'HS256', 'RS256'].freeze
-  DEPRECATED_ALGORITHMS = ['HS384', 'HS512'].freeze
-  RECOMMENDED_ALGORITHMS = ['RS256', 'ES256', 'PS256', 'EdDSA'].freeze
+  INSECURE_ALGORITHMS = ["none", "HS256", "RS256"].freeze unless defined?(INSECURE_ALGORITHMS)
+  DEPRECATED_ALGORITHMS = ["HS384", "HS512"].freeze unless defined?(DEPRECATED_ALGORITHMS)
+  RECOMMENDED_ALGORITHMS = ["RS256", "ES256", "PS256", "EdDSA"].freeze unless defined?(RECOMMENDED_ALGORITHMS)
 
   # Security vulnerabilities to check
   SECURITY_CHECKS = [
@@ -42,8 +42,8 @@ class JwtValidatorTool
     :check_issuer_claim,
     :check_subject_claim,
     :check_token_age,
-    :check_sensitive_data
-  ].freeze
+    :check_sensitive_data,
+  ].freeze unless defined?(SECURITY_CHECKS)
 
   def execute(params)
     jwt_token = params[:jwt_token]&.strip
@@ -51,30 +51,30 @@ class JwtValidatorTool
 
     if jwt_token.blank?
       return {
-        error: "No JWT token provided",
-        header: {},
-        payload: {},
-        signature: {},
-        vulnerabilities: [],
-        recommendations: [],
-        security_score: { score: 0, grade: 'F' }
-      }
+               error: "No JWT token provided",
+               header: {},
+               payload: {},
+               signature: {},
+               vulnerabilities: [],
+               recommendations: [],
+               security_score: { score: 0, grade: "F" },
+             }
     end
 
     begin
       # Parse JWT
-      parts = jwt_token.split('.')
+      parts = jwt_token.split(".")
 
       unless parts.length == 3
         return {
-          error: "Invalid JWT format. Expected 3 parts (header.payload.signature), got #{parts.length}",
-          header: {},
-          payload: {},
-          signature: {},
-          vulnerabilities: [],
-          recommendations: ["Ensure JWT follows the format: header.payload.signature"],
-          security_score: { score: 0, grade: 'F' }
-        }
+                 error: "Invalid JWT format. Expected 3 parts (header.payload.signature), got #{parts.length}",
+                 header: {},
+                 payload: {},
+                 signature: {},
+                 vulnerabilities: [],
+                 recommendations: ["Ensure JWT follows the format: header.payload.signature"],
+                 security_score: { score: 0, grade: "F" },
+               }
       end
 
       # Decode header and payload
@@ -84,10 +84,10 @@ class JwtValidatorTool
 
       # Verify signature if secret provided
       signature_info = if secret_key.present?
-                         verify_signature(jwt_token, secret_key, header)
-                       else
-                         { verified: false, message: "No secret key provided for verification" }
-                       end
+          verify_signature(jwt_token, secret_key, header)
+        else
+          { verified: false, message: "No secret key provided for verification" }
+        end
 
       # Run security checks
       vulnerabilities = run_security_checks(header, payload)
@@ -106,7 +106,7 @@ class JwtValidatorTool
         vulnerabilities: vulnerabilities,
         recommendations: recommendations,
         security_score: security_score,
-        token_info: extract_token_info(header, payload)
+        token_info: extract_token_info(header, payload),
       }
     rescue StandardError => e
       {
@@ -116,7 +116,7 @@ class JwtValidatorTool
         signature: {},
         vulnerabilities: [],
         recommendations: ["Ensure the JWT is properly formatted and Base64URL encoded"],
-        security_score: { score: 0, grade: 'F' }
+        security_score: { score: 0, grade: "F" },
       }
     end
   end
@@ -125,9 +125,9 @@ class JwtValidatorTool
 
   def decode_base64_json(base64_string)
     # Add padding if needed
-    padded = base64_string + '=' * (4 - base64_string.length % 4)
+    padded = base64_string + "=" * (4 - base64_string.length % 4)
     # Replace URL-safe characters
-    padded = padded.tr('-_', '+/')
+    padded = padded.tr("-_", "+/")
 
     decoded = Base64.decode64(padded)
     JSON.parse(decoded, symbolize_names: true)
@@ -137,20 +137,20 @@ class JwtValidatorTool
 
   def verify_signature(jwt_token, secret_key, header)
     algorithm = header[:alg]&.upcase
-    parts = jwt_token.split('.')
+    parts = jwt_token.split(".")
 
     # Get signing input (header.payload)
-    signing_input = parts[0..1].join('.')
-    signature_bytes = Base64.urlsafe_decode64(parts[2] + '=' * (4 - parts[2].length % 4))
+    signing_input = parts[0..1].join(".")
+    signature_bytes = Base64.urlsafe_decode64(parts[2] + "=" * (4 - parts[2].length % 4))
 
     case algorithm
-    when 'HS256', 'HS384', 'HS512'
+    when "HS256", "HS384", "HS512"
       verify_hmac_signature(signing_input, signature_bytes, secret_key, algorithm)
-    when 'RS256', 'RS384', 'RS512'
+    when "RS256", "RS384", "RS512"
       verify_rsa_signature(signing_input, signature_bytes, secret_key, algorithm)
-    when 'ES256', 'ES384', 'ES512'
+    when "ES256", "ES384", "ES512"
       verify_ecdsa_signature(signing_input, signature_bytes, secret_key, algorithm)
-    when 'NONE'
+    when "NONE"
       { verified: false, message: "Algorithm 'none' is insecure - no signature verification performed" }
     else
       { verified: false, message: "Unsupported algorithm: #{algorithm}" }
@@ -161,10 +161,10 @@ class JwtValidatorTool
 
   def verify_hmac_signature(signing_input, signature_bytes, secret_key, algorithm)
     digest = case algorithm
-             when 'HS256' then OpenSSL::Digest::SHA256.new
-             when 'HS384' then OpenSSL::Digest::SHA384.new
-             when 'HS512' then OpenSSL::Digest::SHA512.new
-             end
+      when "HS256" then OpenSSL::Digest::SHA256.new
+      when "HS384" then OpenSSL::Digest::SHA384.new
+      when "HS512" then OpenSSL::Digest::SHA512.new
+      end
 
     expected_signature = OpenSSL::HMAC.digest(digest, secret_key, signing_input)
 
@@ -177,10 +177,10 @@ class JwtValidatorTool
 
   def verify_rsa_signature(signing_input, signature_bytes, public_key_pem, algorithm)
     digest = case algorithm
-             when 'RS256' then OpenSSL::Digest::SHA256.new
-             when 'RS384' then OpenSSL::Digest::SHA384.new
-             when 'RS512' then OpenSSL::Digest::SHA512.new
-             end
+      when "RS256" then OpenSSL::Digest::SHA256.new
+      when "RS384" then OpenSSL::Digest::SHA384.new
+      when "RS512" then OpenSSL::Digest::SHA512.new
+      end
 
     public_key = OpenSSL::PKey::RSA.new(public_key_pem)
 
@@ -195,10 +195,10 @@ class JwtValidatorTool
 
   def verify_ecdsa_signature(signing_input, signature_bytes, public_key_pem, algorithm)
     digest = case algorithm
-             when 'ES256' then OpenSSL::Digest::SHA256.new
-             when 'ES384' then OpenSSL::Digest::SHA384.new
-             when 'ES512' then OpenSSL::Digest::SHA512.new
-             end
+      when "ES256" then OpenSSL::Digest::SHA256.new
+      when "ES384" then OpenSSL::Digest::SHA384.new
+      when "ES512" then OpenSSL::Digest::SHA512.new
+      end
 
     public_key = OpenSSL::PKey::EC.new(public_key_pem)
 
@@ -233,13 +233,13 @@ class JwtValidatorTool
   def check_algorithm_none(header, _payload)
     algorithm = header[:alg]&.downcase
 
-    if algorithm == 'none'
+    if algorithm == "none"
       {
         name: "Algorithm 'none' Detected",
         severity: "CRITICAL",
         description: "JWT uses 'none' algorithm which provides no cryptographic security",
         impact: "Anyone can forge tokens - complete authentication bypass possible",
-        cwe: "CWE-327"
+        cwe: "CWE-327",
       }
     end
   end
@@ -247,13 +247,13 @@ class JwtValidatorTool
   def check_weak_algorithm(header, _payload)
     algorithm = header[:alg]&.upcase
 
-    if algorithm == 'HS256'
+    if algorithm == "HS256"
       {
         name: "Weak HMAC Algorithm",
         severity: "HIGH",
         description: "JWT uses HS256 which is symmetric and less secure than asymmetric algorithms",
         impact: "Secret key must be shared with all parties; key compromise affects all tokens",
-        cwe: "CWE-326"
+        cwe: "CWE-326",
       }
     elsif DEPRECATED_ALGORITHMS.include?(algorithm)
       {
@@ -261,7 +261,7 @@ class JwtValidatorTool
         severity: "MEDIUM",
         description: "JWT uses #{algorithm} which is considered deprecated",
         impact: "May not be supported in future implementations",
-        cwe: "CWE-327"
+        cwe: "CWE-327",
       }
     end
   end
@@ -278,7 +278,7 @@ class JwtValidatorTool
         severity: "HIGH",
         description: "Token expired at #{exp_time.utc}",
         impact: "Token should not be accepted - expired #{time_ago(exp_time)} ago",
-        cwe: "CWE-613"
+        cwe: "CWE-613",
       }
     end
   end
@@ -290,7 +290,7 @@ class JwtValidatorTool
         severity: "HIGH",
         description: "JWT does not have an expiration time (exp claim)",
         impact: "Token never expires - can be used indefinitely if compromised",
-        cwe: "CWE-613"
+        cwe: "CWE-613",
       }
     end
   end
@@ -310,7 +310,7 @@ class JwtValidatorTool
         severity: "MEDIUM",
         description: "Token lifetime is #{lifetime_hours.round(1)} hours (> 24 hours)",
         impact: "Long-lived tokens increase risk window if compromised",
-        cwe: "CWE-613"
+        cwe: "CWE-613",
       }
     end
   end
@@ -323,9 +323,9 @@ class JwtValidatorTool
       {
         name: "Missing Standard Claims",
         severity: "MEDIUM",
-        description: "JWT missing recommended claims: #{missing.join(', ')}",
+        description: "JWT missing recommended claims: #{missing.join(", ")}",
         impact: "Reduced token security and traceability",
-        cwe: "CWE-1390"
+        cwe: "CWE-1390",
       }
     end
   end
@@ -337,7 +337,7 @@ class JwtValidatorTool
         severity: "LOW",
         description: "JWT does not specify an audience (aud claim)",
         impact: "Token can be used with any service - increases attack surface",
-        cwe: "CWE-1390"
+        cwe: "CWE-1390",
       }
     end
   end
@@ -349,7 +349,7 @@ class JwtValidatorTool
         severity: "LOW",
         description: "JWT does not specify an issuer (iss claim)",
         impact: "Cannot verify token origin - reduces accountability",
-        cwe: "CWE-1390"
+        cwe: "CWE-1390",
       }
     end
   end
@@ -361,7 +361,7 @@ class JwtValidatorTool
         severity: "LOW",
         description: "JWT does not specify a subject (sub claim)",
         impact: "Cannot identify the principal - reduces token usability",
-        cwe: "CWE-1390"
+        cwe: "CWE-1390",
       }
     end
   end
@@ -380,7 +380,7 @@ class JwtValidatorTool
         severity: "MEDIUM",
         description: "Token was issued #{time_ago(issued_time)} ago and has no expiration",
         impact: "Old tokens without expiration pose security risks",
-        cwe: "CWE-613"
+        cwe: "CWE-613",
       }
     end
   end
@@ -393,9 +393,9 @@ class JwtValidatorTool
       {
         name: "Potential Sensitive Data in Payload",
         severity: "HIGH",
-        description: "JWT payload contains potentially sensitive fields: #{found_keys.join(', ')}",
+        description: "JWT payload contains potentially sensitive fields: #{found_keys.join(", ")}",
         impact: "JWT payloads are only Base64 encoded - anyone can read sensitive data",
-        cwe: "CWE-312"
+        cwe: "CWE-312",
       }
     end
   end
@@ -405,7 +405,7 @@ class JwtValidatorTool
 
     # Algorithm recommendations
     algorithm = header[:alg]&.upcase
-    if algorithm == 'NONE' || algorithm == 'HS256'
+    if algorithm == "NONE" || algorithm == "HS256"
       recommendations << "Use asymmetric algorithms like RS256, ES256, or PS256 instead of #{algorithm}"
     end
 
@@ -433,7 +433,7 @@ class JwtValidatorTool
     end
 
     # General recommendations
-    if vulnerabilities.any? { |v| v[:severity] == 'CRITICAL' }
+    if vulnerabilities.any? { |v| v[:severity] == "CRITICAL" }
       recommendations << "URGENT: Address critical vulnerabilities immediately"
     end
 
@@ -450,13 +450,13 @@ class JwtValidatorTool
     # Deduct points for vulnerabilities
     vulnerabilities.each do |vuln|
       case vuln[:severity]
-      when 'CRITICAL'
+      when "CRITICAL"
         score -= 30
-      when 'HIGH'
+      when "HIGH"
         score -= 20
-      when 'MEDIUM'
+      when "MEDIUM"
         score -= 10
-      when 'LOW'
+      when "LOW"
         score -= 5
       end
     end
@@ -476,28 +476,28 @@ class JwtValidatorTool
       score: score,
       grade: score_to_grade(score),
       rating: score_to_rating(score),
-      max_score: 100
+      max_score: 100,
     }
   end
 
   def score_to_grade(score)
     case score
-    when 90..100 then 'A'
-    when 80...90 then 'B'
-    when 70...80 then 'C'
-    when 60...70 then 'D'
-    else 'F'
+    when 90..100 then "A"
+    when 80...90 then "B"
+    when 70...80 then "C"
+    when 60...70 then "D"
+    else "F"
     end
   end
 
   def score_to_rating(score)
     case score
-    when 90..100 then 'Excellent'
-    when 80...90 then 'Good'
-    when 70...80 then 'Fair'
-    when 60...70 then 'Poor'
-    when 40...60 then 'Weak'
-    else 'Insecure'
+    when 90..100 then "Excellent"
+    when 80...90 then "Good"
+    when 70...80 then "Fair"
+    when 60...70 then "Poor"
+    when 40...60 then "Weak"
+    else "Insecure"
     end
   end
 
@@ -508,7 +508,7 @@ class JwtValidatorTool
     [:exp, :iat, :nbf].each do |time_field|
       if formatted[time_field]
         time = Time.at(formatted[time_field])
-        formatted["#{time_field}_formatted".to_sym] = time.utc.strftime('%Y-%m-%d %H:%M:%S UTC')
+        formatted["#{time_field}_formatted".to_sym] = time.utc.strftime("%Y-%m-%d %H:%M:%S UTC")
         formatted["#{time_field}_relative".to_sym] = time_ago(time)
       end
     end
@@ -519,20 +519,20 @@ class JwtValidatorTool
   def extract_token_info(header, payload)
     info = {
       algorithm: header[:alg],
-      type: header[:typ] || 'JWT',
-      key_id: header[:kid]
+      type: header[:typ] || "JWT",
+      key_id: header[:kid],
     }
 
     if payload[:exp]
       exp_time = Time.at(payload[:exp])
-      info[:expires_at] = exp_time.utc.strftime('%Y-%m-%d %H:%M:%S UTC')
+      info[:expires_at] = exp_time.utc.strftime("%Y-%m-%d %H:%M:%S UTC")
       info[:is_expired] = exp_time < Time.now
       info[:time_until_expiry] = time_until(exp_time) if exp_time > Time.now
     end
 
     if payload[:iat]
       iat_time = Time.at(payload[:iat])
-      info[:issued_at] = iat_time.utc.strftime('%Y-%m-%d %H:%M:%S UTC')
+      info[:issued_at] = iat_time.utc.strftime("%Y-%m-%d %H:%M:%S UTC")
       info[:token_age] = time_ago(iat_time)
     end
 

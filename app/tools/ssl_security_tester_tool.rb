@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-require 'net/http'
-require 'openssl'
-require 'uri'
-require 'socket'
-require 'timeout'
-require 'set'
+require "net/http"
+require "openssl"
+require "uri"
+require "socket"
+require "timeout"
+require "set"
 
 # SSL/TLS Security Tester
 # Tests websites for SSL/TLS configuration security
@@ -15,45 +15,45 @@ class SslSecurityTesterTool
   configure_tool(
     name: "SSL/TLS Security Tester",
     description: "Test websites for SSL/TLS security, certificate validity, and protocol vulnerabilities",
-    category: "Network Security"
+    category: "Network Security",
   )
 
   input_field :target_url, type: :url, label: "Target URL",
-              placeholder: "https://example.com",
-              required: true
+                           placeholder: "https://example.com",
+                           required: true
 
   output_format :html, :json
 
   # SSL/TLS protocol versions
   SSL_VERSIONS = {
-    'SSLv2' => OpenSSL::SSL::SSL2_VERSION,
-    'SSLv3' => OpenSSL::SSL::SSL3_VERSION,
-    'TLS1.0' => OpenSSL::SSL::TLS1_VERSION,
-    'TLS1.1' => OpenSSL::SSL::TLS1_1_VERSION,
-    'TLS1.2' => OpenSSL::SSL::TLS1_2_VERSION,
-    'TLS1.3' => OpenSSL::SSL::TLS1_3_VERSION
-  }.freeze
+    "SSLv2" => OpenSSL::SSL::SSL2_VERSION,
+    "SSLv3" => OpenSSL::SSL::SSL3_VERSION,
+    "TLS1.0" => OpenSSL::SSL::TLS1_VERSION,
+    "TLS1.1" => OpenSSL::SSL::TLS1_1_VERSION,
+    "TLS1.2" => OpenSSL::SSL::TLS1_2_VERSION,
+    "TLS1.3" => OpenSSL::SSL::TLS1_3_VERSION,
+  }.freeze unless defined?(SSL_VERSIONS)
 
   # Weak ciphers that should not be used (cryptographically broken or severely deprecated)
   WEAK_CIPHERS = [
-    'NULL', 'EXPORT', 'DES', 'RC4', 'MD5', 'PSK', 'SRP',
-    'IDEA', 'AECDH', 'ADH', 'aNULL', 'eNULL'
-  ].freeze
+    "NULL", "EXPORT", "DES", "RC4", "MD5", "PSK", "SRP",
+    "IDEA", "AECDH", "ADH", "aNULL", "eNULL",
+  ].freeze unless defined?(WEAK_CIPHERS)
 
   def execute(params)
     url_string = params[:target_url]
 
     if url_string.blank?
       return {
-        error: "No URL provided",
-        certificate: {},
-        protocols: {},
-        ciphers: {},
-        tls_config: {},
-        vulnerabilities: [],
-        recommendations: [],
-        summary: { score: 0, grade: 'F' }
-      }
+               error: "No URL provided",
+               certificate: {},
+               protocols: {},
+               ciphers: {},
+               tls_config: {},
+               vulnerabilities: [],
+               recommendations: [],
+               summary: { score: 0, grade: "F" },
+             }
     end
 
     # Parse and validate URL
@@ -61,33 +61,33 @@ class SslSecurityTesterTool
       uri = URI.parse(url_string)
       uri = URI.parse("https://#{url_string}") unless uri.scheme
 
-      unless uri.scheme == 'https'
+      unless uri.scheme == "https"
         return {
-          error: "URL must use HTTPS protocol",
-          url: url_string,
-          certificate: {},
-          protocols: {},
-          ciphers: {},
-          tls_config: {},
-          vulnerabilities: [],
-          recommendations: ["Use HTTPS instead of HTTP"],
-          summary: { score: 0, grade: 'F' }
-        }
+                 error: "URL must use HTTPS protocol",
+                 url: url_string,
+                 certificate: {},
+                 protocols: {},
+                 ciphers: {},
+                 tls_config: {},
+                 vulnerabilities: [],
+                 recommendations: ["Use HTTPS instead of HTTP"],
+                 summary: { score: 0, grade: "F" },
+               }
       end
 
       host = uri.host
       port = uri.port || 443
     rescue URI::InvalidURIError => e
       return {
-        error: "Invalid URL format: #{e.message}",
-        certificate: {},
-        protocols: {},
-        ciphers: {},
-        tls_config: {},
-        vulnerabilities: [],
-        recommendations: [],
-        summary: { score: 0, grade: 'F' }
-      }
+               error: "Invalid URL format: #{e.message}",
+               certificate: {},
+               protocols: {},
+               ciphers: {},
+               tls_config: {},
+               vulnerabilities: [],
+               recommendations: [],
+               summary: { score: 0, grade: "F" },
+             }
     end
 
     # Perform SSL/TLS tests
@@ -111,7 +111,7 @@ class SslSecurityTesterTool
         tls_config: tls_config,
         vulnerabilities: vulnerabilities,
         recommendations: recommendations,
-        summary: summary
+        summary: summary,
       }
     rescue StandardError => e
       {
@@ -125,7 +125,7 @@ class SslSecurityTesterTool
         tls_config: {},
         vulnerabilities: [],
         recommendations: ["Ensure the server is accessible and configured correctly"],
-        summary: { score: 0, grade: 'F' }
+        summary: { score: 0, grade: "F" },
       }
     end
   end
@@ -169,11 +169,11 @@ class SslSecurityTesterTool
       expired: cert.not_after < Time.now,
       self_signed: cert.issuer == cert.subject,
       signature_algorithm: cert.signature_algorithm,
-      public_key_algorithm: cert.public_key.class.to_s.split('::').last,
+      public_key_algorithm: cert.public_key.class.to_s.split("::").last,
       key_size: get_key_size(cert.public_key),
       san_domains: extract_san_domains(cert),
       chain_length: cert_chain.length,
-      valid: !cert.not_after.nil? && cert.not_after > Time.now
+      valid: !cert.not_after.nil? && cert.not_after > Time.now,
     }
   rescue StandardError => e
     { error: "Certificate check failed: #{e.message}" }
@@ -188,7 +188,7 @@ class SslSecurityTesterTool
       supported = test_protocol_version(host, port, version)
       results[name] = {
         supported: supported,
-        secure: protocol_secure?(name)
+        secure: protocol_secure?(name),
       }
     end
 
@@ -223,13 +223,13 @@ class SslSecurityTesterTool
 
   def version_name(version)
     case version
-    when OpenSSL::SSL::SSL2_VERSION then 'SSLv2'
-    when OpenSSL::SSL::SSL3_VERSION then 'SSLv3'
-    when OpenSSL::SSL::TLS1_VERSION then 'TLSv1'
-    when OpenSSL::SSL::TLS1_1_VERSION then 'TLSv1.1'
-    when OpenSSL::SSL::TLS1_2_VERSION then 'TLSv1.2'
-    when OpenSSL::SSL::TLS1_3_VERSION then 'TLSv1.3'
-    else 'Unknown'
+    when OpenSSL::SSL::SSL2_VERSION then "SSLv2"
+    when OpenSSL::SSL::SSL3_VERSION then "SSLv3"
+    when OpenSSL::SSL::TLS1_VERSION then "TLSv1"
+    when OpenSSL::SSL::TLS1_1_VERSION then "TLSv1.1"
+    when OpenSSL::SSL::TLS1_2_VERSION then "TLSv1.2"
+    when OpenSSL::SSL::TLS1_3_VERSION then "TLSv1.3"
+    else "Unknown"
     end
   end
 
@@ -265,7 +265,7 @@ class SslSecurityTesterTool
             authentication: parse_authentication(cipher_name),
             encryption: parse_encryption(cipher_name),
             mac: parse_mac(cipher_name),
-            forward_secrecy: has_forward_secrecy?(cipher_name)
+            forward_secrecy: has_forward_secrecy?(cipher_name),
           }
 
           protocol_ciphers << cipher_info
@@ -274,9 +274,9 @@ class SslSecurityTesterTool
           unless ciphers.any? { |c| c[:name] == cipher_name && c[:protocol] == protocol_name }
             ciphers << cipher_info
 
-            if cipher_info[:strength] == 'WEAK'
+            if cipher_info[:strength] == "WEAK"
               weak_ciphers << cipher_info
-            elsif cipher_info[:strength] == 'STRONG'
+            elsif cipher_info[:strength] == "STRONG"
               strong_ciphers << cipher_info
             end
           end
@@ -295,14 +295,14 @@ class SslSecurityTesterTool
       total_supported: ciphers.length,
       weak_count: weak_ciphers.length,
       strong_count: strong_ciphers.length,
-      medium_count: ciphers.count { |c| c[:strength] == 'MEDIUM' },
+      medium_count: ciphers.count { |c| c[:strength] == "MEDIUM" },
       forward_secrecy_count: ciphers.count { |c| c[:forward_secrecy] },
       ciphers: ciphers.sort_by { |c| [-c[:bits], c[:name]] },
       weak_ciphers: weak_ciphers,
       strong_ciphers: strong_ciphers,
       by_protocol: supported_by_protocol,
       server_preferred_order: cipher_preference_order,
-      server_cipher_order: server_cipher_order
+      server_cipher_order: server_cipher_order,
     }
   end
 
@@ -315,7 +315,7 @@ class SslSecurityTesterTool
       ctx = OpenSSL::SSL::SSLContext.new
 
       # Try to get maximum set of ciphers
-      ['ALL:COMPLEMENTOFALL', 'ALL:eNULL', 'ALL'].each do |cipher_string|
+      ["ALL:COMPLEMENTOFALL", "ALL:eNULL", "ALL"].each do |cipher_string|
         begin
           ctx.ciphers = cipher_string
           ctx.ciphers.each do |cipher|
@@ -326,7 +326,7 @@ class SslSecurityTesterTool
                 openssl_name: cipher[0],
                 protocol: cipher[1],
                 bits: cipher[2],
-                alg_bits: cipher[3]
+                alg_bits: cipher[3],
               }
             end
           end
@@ -340,18 +340,18 @@ class SslSecurityTesterTool
 
     # Add common cipher names that might not be in OpenSSL's list
     additional_ciphers = [
-      'TLS_AES_256_GCM_SHA384', 'TLS_AES_128_GCM_SHA256', 'TLS_CHACHA20_POLY1305_SHA256',
-      'ECDHE-RSA-AES256-GCM-SHA384', 'ECDHE-RSA-AES128-GCM-SHA256',
-      'ECDHE-ECDSA-AES256-GCM-SHA384', 'ECDHE-ECDSA-AES128-GCM-SHA256',
-      'ECDHE-RSA-CHACHA20-POLY1305', 'ECDHE-ECDSA-CHACHA20-POLY1305',
-      'DHE-RSA-AES256-GCM-SHA384', 'DHE-RSA-AES128-GCM-SHA256',
-      'ECDHE-RSA-AES256-SHA384', 'ECDHE-RSA-AES128-SHA256',
-      'DHE-RSA-AES256-SHA256', 'DHE-RSA-AES128-SHA256',
-      'AES256-GCM-SHA384', 'AES128-GCM-SHA256',
-      'AES256-SHA256', 'AES128-SHA256', 'AES256-SHA', 'AES128-SHA',
-      'DES-CBC3-SHA', 'RC4-SHA', 'RC4-MD5', 'DES-CBC-SHA',
-      'NULL-SHA256', 'NULL-SHA', 'NULL-MD5',
-      'EXPORT-RC4-MD5', 'EXPORT-DES-CBC-SHA'
+      "TLS_AES_256_GCM_SHA384", "TLS_AES_128_GCM_SHA256", "TLS_CHACHA20_POLY1305_SHA256",
+      "ECDHE-RSA-AES256-GCM-SHA384", "ECDHE-RSA-AES128-GCM-SHA256",
+      "ECDHE-ECDSA-AES256-GCM-SHA384", "ECDHE-ECDSA-AES128-GCM-SHA256",
+      "ECDHE-RSA-CHACHA20-POLY1305", "ECDHE-ECDSA-CHACHA20-POLY1305",
+      "DHE-RSA-AES256-GCM-SHA384", "DHE-RSA-AES128-GCM-SHA256",
+      "ECDHE-RSA-AES256-SHA384", "ECDHE-RSA-AES128-SHA256",
+      "DHE-RSA-AES256-SHA256", "DHE-RSA-AES128-SHA256",
+      "AES256-GCM-SHA384", "AES128-GCM-SHA256",
+      "AES256-SHA256", "AES128-SHA256", "AES256-SHA", "AES128-SHA",
+      "DES-CBC3-SHA", "RC4-SHA", "RC4-MD5", "DES-CBC-SHA",
+      "NULL-SHA256", "NULL-SHA", "NULL-MD5",
+      "EXPORT-RC4-MD5", "EXPORT-DES-CBC-SHA",
     ]
 
     additional_ciphers.each do |cipher_name|
@@ -394,12 +394,12 @@ class SslSecurityTesterTool
           # Verify the server actually selected this cipher
           if actual_cipher && actual_cipher[0] == cipher_name
             return {
-              supported: true,
-              name: actual_cipher[0],
-              version: actual_cipher[1],
-              bits: actual_cipher[2],
-              alg_bits: actual_cipher[3]
-            }
+                     supported: true,
+                     name: actual_cipher[0],
+                     version: actual_cipher[1],
+                     bits: actual_cipher[2],
+                     alg_bits: actual_cipher[3],
+                   }
           else
             return { supported: false }
           end
@@ -423,9 +423,9 @@ class SslSecurityTesterTool
     # Make multiple connections with different client cipher orders
     # If server has preference, it should always pick the same cipher
     test_orders = [
-      ['ECDHE-RSA-AES256-GCM-SHA384', 'ECDHE-RSA-AES128-GCM-SHA256', 'AES256-SHA'],
-      ['AES256-SHA', 'ECDHE-RSA-AES128-GCM-SHA256', 'ECDHE-RSA-AES256-GCM-SHA384'],
-      ['ECDHE-RSA-AES128-GCM-SHA256', 'AES256-SHA', 'ECDHE-RSA-AES256-GCM-SHA384']
+      ["ECDHE-RSA-AES256-GCM-SHA384", "ECDHE-RSA-AES128-GCM-SHA256", "AES256-SHA"],
+      ["AES256-SHA", "ECDHE-RSA-AES128-GCM-SHA256", "ECDHE-RSA-AES256-GCM-SHA384"],
+      ["ECDHE-RSA-AES128-GCM-SHA256", "AES256-SHA", "ECDHE-RSA-AES256-GCM-SHA384"],
     ]
 
     selected_ciphers = []
@@ -436,7 +436,7 @@ class SslSecurityTesterTool
           tcp_socket = TCPSocket.new(host, port)
           ssl_context = OpenSSL::SSL::SSLContext.new
           ssl_context.verify_mode = OpenSSL::SSL::VERIFY_NONE
-          ssl_context.ciphers = cipher_order.join(':')
+          ssl_context.ciphers = cipher_order.join(":")
           ssl_socket = OpenSSL::SSL::SSLSocket.new(tcp_socket, ssl_context)
           ssl_socket.hostname = host
 
@@ -471,11 +471,11 @@ class SslSecurityTesterTool
 
     # Get list of all supported ciphers first (would come from main scan)
     common_ciphers = [
-      'TLS_AES_256_GCM_SHA384', 'TLS_AES_128_GCM_SHA256', 'TLS_CHACHA20_POLY1305_SHA256',
-      'ECDHE-RSA-AES256-GCM-SHA384', 'ECDHE-RSA-AES128-GCM-SHA256',
-      'ECDHE-ECDSA-AES256-GCM-SHA384', 'ECDHE-ECDSA-AES128-GCM-SHA256',
-      'DHE-RSA-AES256-GCM-SHA384', 'DHE-RSA-AES128-GCM-SHA256',
-      'AES256-GCM-SHA384', 'AES128-GCM-SHA256', 'AES256-SHA256', 'AES128-SHA256'
+      "TLS_AES_256_GCM_SHA384", "TLS_AES_128_GCM_SHA256", "TLS_CHACHA20_POLY1305_SHA256",
+      "ECDHE-RSA-AES256-GCM-SHA384", "ECDHE-RSA-AES128-GCM-SHA256",
+      "ECDHE-ECDSA-AES256-GCM-SHA384", "ECDHE-ECDSA-AES128-GCM-SHA256",
+      "DHE-RSA-AES256-GCM-SHA384", "DHE-RSA-AES128-GCM-SHA256",
+      "AES256-GCM-SHA384", "AES128-GCM-SHA256", "AES256-SHA256", "AES128-SHA256",
     ]
 
     # Try to determine order by offering all ciphers and seeing what server picks
@@ -488,7 +488,7 @@ class SslSecurityTesterTool
           tcp_socket = TCPSocket.new(host, port)
           ssl_context = OpenSSL::SSL::SSLContext.new
           ssl_context.verify_mode = OpenSSL::SSL::VERIFY_NONE
-          ssl_context.ciphers = available_ciphers.join(':')
+          ssl_context.ciphers = available_ciphers.join(":")
           ssl_socket = OpenSSL::SSL::SSLSocket.new(tcp_socket, ssl_context)
           ssl_socket.hostname = host
 
@@ -512,57 +512,57 @@ class SslSecurityTesterTool
 
   def parse_key_exchange(cipher_name)
     case cipher_name
-    when /ECDHE/ then 'ECDHE'
-    when /DHE/ then 'DHE'
-    when /ECDH/ then 'ECDH'
-    when /DH/ then 'DH'
-    when /RSA/ then 'RSA'
-    when /PSK/ then 'PSK'
-    when /^TLS_/ then 'TLS1.3'
-    else 'Unknown'
+    when /ECDHE/ then "ECDHE"
+    when /DHE/ then "DHE"
+    when /ECDH/ then "ECDH"
+    when /DH/ then "DH"
+    when /RSA/ then "RSA"
+    when /PSK/ then "PSK"
+    when /^TLS_/ then "TLS1.3"
+    else "Unknown"
     end
   end
 
   def parse_authentication(cipher_name)
     case cipher_name
-    when /RSA/ then 'RSA'
-    when /ECDSA/ then 'ECDSA'
-    when /DSS/ then 'DSS'
-    when /PSK/ then 'PSK'
-    when /aNULL/ then 'None'
-    when /^TLS_/ then 'TLS1.3'
-    else 'RSA'
+    when /RSA/ then "RSA"
+    when /ECDSA/ then "ECDSA"
+    when /DSS/ then "DSS"
+    when /PSK/ then "PSK"
+    when /aNULL/ then "None"
+    when /^TLS_/ then "TLS1.3"
+    else "RSA"
     end
   end
 
   def parse_encryption(cipher_name)
     case cipher_name
-    when /AES256-GCM/ then 'AES-256-GCM'
-    when /AES128-GCM/ then 'AES-128-GCM'
-    when /AES256/ then 'AES-256-CBC'
-    when /AES128/ then 'AES-128-CBC'
-    when /CHACHA20/ then 'ChaCha20-Poly1305'
-    when /3DES/ then '3DES'
-    when /DES/ then 'DES'
-    when /RC4/ then 'RC4'
-    when /NULL/ then 'None'
-    else 'Unknown'
+    when /AES256-GCM/ then "AES-256-GCM"
+    when /AES128-GCM/ then "AES-128-GCM"
+    when /AES256/ then "AES-256-CBC"
+    when /AES128/ then "AES-128-CBC"
+    when /CHACHA20/ then "ChaCha20-Poly1305"
+    when /3DES/ then "3DES"
+    when /DES/ then "DES"
+    when /RC4/ then "RC4"
+    when /NULL/ then "None"
+    else "Unknown"
     end
   end
 
   def parse_mac(cipher_name)
     case cipher_name
-    when /GCM|POLY1305|CCM/ then 'AEAD'
-    when /SHA384/ then 'SHA384'
-    when /SHA256/ then 'SHA256'
-    when /SHA/ then 'SHA1'
-    when /MD5/ then 'MD5'
-    else 'Unknown'
+    when /GCM|POLY1305|CCM/ then "AEAD"
+    when /SHA384/ then "SHA384"
+    when /SHA256/ then "SHA256"
+    when /SHA/ then "SHA1"
+    when /MD5/ then "MD5"
+    else "Unknown"
     end
   end
 
   def has_forward_secrecy?(cipher_name)
-    cipher_name.include?('ECDHE') || cipher_name.include?('DHE')
+    cipher_name.include?("ECDHE") || cipher_name.include?("DHE")
   end
 
   def test_tls_configuration(host, port)
@@ -642,7 +642,7 @@ class SslSecurityTesterTool
   def test_session_resumption(host, port)
     resumption = {
       session_id: false,
-      session_ticket: false
+      session_ticket: false,
     }
 
     begin
@@ -706,14 +706,14 @@ class SslSecurityTesterTool
           # Check if OCSP response was provided
           if ssl_socket.respond_to?(:ocsp_response) && ssl_socket.ocsp_response
             return {
-              enabled: true,
-              response_present: true
-            }
+                     enabled: true,
+                     response_present: true,
+                   }
           else
             return {
-              enabled: false,
-              response_present: false
-            }
+                     enabled: false,
+                     response_present: false,
+                   }
           end
         ensure
           ssl_socket.close rescue nil
@@ -740,12 +740,12 @@ class SslSecurityTesterTool
           cert = ssl_socket.peer_cert
 
           # Look for SCT extension in certificate
-          sct_extension = cert.extensions.find { |ext| ext.oid == 'ct_precert_scts' || ext.oid == '1.3.6.1.4.1.11129.2.4.2' }
+          sct_extension = cert.extensions.find { |ext| ext.oid == "ct_precert_scts" || ext.oid == "1.3.6.1.4.1.11129.2.4.2" }
 
           return {
-            enabled: !sct_extension.nil?,
-            sct_present: !sct_extension.nil?
-          }
+                   enabled: !sct_extension.nil?,
+                   sct_present: !sct_extension.nil?,
+                 }
         ensure
           ssl_socket.close rescue nil
           tcp_socket.close rescue nil
@@ -779,7 +779,7 @@ class SslSecurityTesterTool
           return { supported: false }
         rescue OpenSSL::SSL::SSLError => e
           # If connection is rejected, SCSV might be working
-          if e.message.include?('inappropriate fallback') || e.message.include?('SCSV')
+          if e.message.include?("inappropriate fallback") || e.message.include?("SCSV")
             return { supported: true }
           else
             return { supported: false }
@@ -803,7 +803,7 @@ class SslSecurityTesterTool
         name: "SSL/TLS Connection Failed",
         severity: "CRITICAL",
         description: cert_info[:error],
-        impact: "Unable to establish secure connection - server configuration is severely broken"
+        impact: "Unable to establish secure connection - server configuration is severely broken",
       }
     end
 
@@ -813,14 +813,14 @@ class SslSecurityTesterTool
         name: "Expired Certificate",
         severity: "CRITICAL",
         description: "The SSL certificate has expired",
-        impact: "Browsers will show security warnings to users"
+        impact: "Browsers will show security warnings to users",
       }
     elsif cert_info[:expires_in_days] && cert_info[:expires_in_days] < 30
       vulns << {
         name: "Certificate Expiring Soon",
         severity: "HIGH",
         description: "Certificate expires in #{cert_info[:expires_in_days]} days",
-        impact: "Certificate needs to be renewed soon"
+        impact: "Certificate needs to be renewed soon",
       }
     end
 
@@ -829,7 +829,7 @@ class SslSecurityTesterTool
         name: "Self-Signed Certificate",
         severity: "HIGH",
         description: "Using a self-signed certificate",
-        impact: "Browsers will not trust this certificate"
+        impact: "Browsers will not trust this certificate",
       }
     end
 
@@ -838,13 +838,13 @@ class SslSecurityTesterTool
       is_weak = false
       description = ""
 
-      if cert_info[:public_key_algorithm] == 'RSA' && cert_info[:key_size] < 2048
+      if cert_info[:public_key_algorithm] == "RSA" && cert_info[:key_size] < 2048
         is_weak = true
         description = "RSA key size is #{cert_info[:key_size]} bits (should be at least 2048)"
-      elsif cert_info[:public_key_algorithm] == 'EC' && cert_info[:key_size] < 256
+      elsif cert_info[:public_key_algorithm] == "EC" && cert_info[:key_size] < 256
         is_weak = true
         description = "EC key size is #{cert_info[:key_size]} bits (should be at least 256)"
-      elsif cert_info[:public_key_algorithm] == 'DSA' && cert_info[:key_size] < 2048
+      elsif cert_info[:public_key_algorithm] == "DSA" && cert_info[:key_size] < 2048
         is_weak = true
         description = "DSA key size is #{cert_info[:key_size]} bits (should be at least 2048)"
       end
@@ -854,45 +854,45 @@ class SslSecurityTesterTool
           name: "Weak Key Size",
           severity: "HIGH",
           description: description,
-          impact: "Vulnerable to cryptographic attacks"
+          impact: "Vulnerable to cryptographic attacks",
         }
       end
     end
 
     # Protocol vulnerabilities
-    if protocols['SSLv2']&.dig(:supported)
+    if protocols["SSLv2"]&.dig(:supported)
       vulns << {
         name: "SSLv2 Enabled",
         severity: "CRITICAL",
         description: "SSLv2 is enabled and severely broken",
-        impact: "Vulnerable to DROWN attack"
+        impact: "Vulnerable to DROWN attack",
       }
     end
 
-    if protocols['SSLv3']&.dig(:supported)
+    if protocols["SSLv3"]&.dig(:supported)
       vulns << {
         name: "SSLv3 Enabled (POODLE)",
         severity: "CRITICAL",
         description: "SSLv3 is vulnerable to POODLE attack",
-        impact: "Attackers can decrypt secure connections"
+        impact: "Attackers can decrypt secure connections",
       }
     end
 
-    if protocols['TLS1.0']&.dig(:supported)
+    if protocols["TLS1.0"]&.dig(:supported)
       vulns << {
         name: "TLS 1.0 Enabled",
         severity: "MEDIUM",
         description: "TLS 1.0 is deprecated and should be disabled",
-        impact: "Vulnerable to various attacks including BEAST"
+        impact: "Vulnerable to various attacks including BEAST",
       }
     end
 
-    if protocols['TLS1.1']&.dig(:supported)
+    if protocols["TLS1.1"]&.dig(:supported)
       vulns << {
         name: "TLS 1.1 Enabled",
         severity: "LOW",
         description: "TLS 1.1 is deprecated",
-        impact: "Modern browsers are phasing out support"
+        impact: "Modern browsers are phasing out support",
       }
     end
 
@@ -902,17 +902,17 @@ class SslSecurityTesterTool
         name: "Weak Cipher Suites",
         severity: "HIGH",
         description: "Server supports #{ciphers[:weak_count]} weak cipher suite(s)",
-        impact: "Vulnerable to various cryptographic attacks"
+        impact: "Vulnerable to various cryptographic attacks",
       }
     end
 
     # Check for RC4
-    if ciphers[:ciphers]&.any? { |c| c[:name].include?('RC4') }
+    if ciphers[:ciphers]&.any? { |c| c[:name].include?("RC4") }
       vulns << {
         name: "RC4 Cipher Support",
         severity: "HIGH",
         description: "Server supports RC4 cipher (broken)",
-        impact: "Vulnerable to RC4 attacks"
+        impact: "Vulnerable to RC4 attacks",
       }
     end
 
@@ -922,7 +922,7 @@ class SslSecurityTesterTool
         name: "TLS Compression (CRIME)",
         severity: "HIGH",
         description: "TLS compression is enabled",
-        impact: "Vulnerable to CRIME attack - session hijacking possible"
+        impact: "Vulnerable to CRIME attack - session hijacking possible",
       }
     end
 
@@ -931,7 +931,7 @@ class SslSecurityTesterTool
         name: "Insecure Renegotiation",
         severity: "MEDIUM",
         description: "Server does not support secure renegotiation",
-        impact: "Vulnerable to renegotiation attacks"
+        impact: "Vulnerable to renegotiation attacks",
       }
     end
 
@@ -941,7 +941,7 @@ class SslSecurityTesterTool
         name: "No Forward Secrecy",
         severity: "MEDIUM",
         description: "Server does not support any cipher suites with forward secrecy",
-        impact: "Past communications can be decrypted if private key is compromised"
+        impact: "Past communications can be decrypted if private key is compromised",
       }
     end
 
@@ -951,7 +951,7 @@ class SslSecurityTesterTool
         name: "Incomplete Certificate Chain",
         severity: "MEDIUM",
         description: "Certificate chain appears incomplete",
-        impact: "Some clients may not trust the certificate"
+        impact: "Some clients may not trust the certificate",
       }
     end
 
@@ -973,14 +973,14 @@ class SslSecurityTesterTool
     # Protocol recommendations
     insecure_protocols = protocols.select { |name, info| info[:supported] && !info[:secure] }
     if insecure_protocols.any?
-      recommendations << "Disable insecure protocols: #{insecure_protocols.keys.join(', ')}"
+      recommendations << "Disable insecure protocols: #{insecure_protocols.keys.join(", ")}"
     end
 
-    unless protocols['TLS1.2']&.dig(:supported)
+    unless protocols["TLS1.2"]&.dig(:supported)
       recommendations << "Enable TLS 1.2 support"
     end
 
-    unless protocols['TLS1.3']&.dig(:supported)
+    unless protocols["TLS1.3"]&.dig(:supported)
       recommendations << "Enable TLS 1.3 for better security and performance"
     end
 
@@ -1031,21 +1031,21 @@ class SslSecurityTesterTool
 
     # Check for weak key size (algorithm-specific)
     if cert_info[:key_size]
-      if cert_info[:public_key_algorithm] == 'RSA' && cert_info[:key_size] < 2048
+      if cert_info[:public_key_algorithm] == "RSA" && cert_info[:key_size] < 2048
         score -= 20
-      elsif cert_info[:public_key_algorithm] == 'EC' && cert_info[:key_size] < 256
+      elsif cert_info[:public_key_algorithm] == "EC" && cert_info[:key_size] < 256
         score -= 20
-      elsif cert_info[:public_key_algorithm] == 'DSA' && cert_info[:key_size] < 2048
+      elsif cert_info[:public_key_algorithm] == "DSA" && cert_info[:key_size] < 2048
         score -= 20
       end
     end
 
     # Protocol deductions
-    score -= 40 if protocols['SSLv2']&.dig(:supported)
-    score -= 40 if protocols['SSLv3']&.dig(:supported)
-    score -= 20 if protocols['TLS1.0']&.dig(:supported)
-    score -= 10 if protocols['TLS1.1']&.dig(:supported)
-    score += 10 if protocols['TLS1.3']&.dig(:supported)
+    score -= 40 if protocols["SSLv2"]&.dig(:supported)
+    score -= 40 if protocols["SSLv3"]&.dig(:supported)
+    score -= 20 if protocols["TLS1.0"]&.dig(:supported)
+    score -= 10 if protocols["TLS1.1"]&.dig(:supported)
+    score += 10 if protocols["TLS1.3"]&.dig(:supported)
 
     # Cipher deductions
     score -= 30 if ciphers[:weak_count] && ciphers[:weak_count] > 0
@@ -1060,13 +1060,13 @@ class SslSecurityTesterTool
     # Vulnerability deductions
     vulnerabilities.each do |vuln|
       case vuln[:severity]
-      when 'CRITICAL'
+      when "CRITICAL"
         score -= 25
-      when 'HIGH'
+      when "HIGH"
         score -= 15
-      when 'MEDIUM'
+      when "MEDIUM"
         score -= 10
-      when 'LOW'
+      when "LOW"
         score -= 5
       end
     end
@@ -1077,33 +1077,33 @@ class SslSecurityTesterTool
       score: score,
       grade: score_to_grade(score),
       max_score: 100,
-      rating: score_to_rating(score)
+      rating: score_to_rating(score),
     }
   end
 
   def score_to_grade(score)
     case score
-    when 90..100 then 'A'
-    when 80...90 then 'B'
-    when 70...80 then 'C'
-    when 60...70 then 'D'
-    else 'F'
+    when 90..100 then "A"
+    when 80...90 then "B"
+    when 70...80 then "C"
+    when 60...70 then "D"
+    else "F"
     end
   end
 
   def score_to_rating(score)
     case score
-    when 90..100 then 'Excellent'
-    when 80...90 then 'Good'
-    when 70...80 then 'Fair'
-    when 60...70 then 'Poor'
-    when 40...60 then 'Weak'
-    else 'Insecure'
+    when 90..100 then "Excellent"
+    when 80...90 then "Good"
+    when 70...80 then "Fair"
+    when 60...70 then "Poor"
+    when 40...60 then "Weak"
+    else "Insecure"
     end
   end
 
   def protocol_secure?(protocol_name)
-    ['TLS1.2', 'TLS1.3'].include?(protocol_name)
+    ["TLS1.2", "TLS1.3"].include?(protocol_name)
   end
 
   def weak_cipher?(cipher_name)
@@ -1111,10 +1111,10 @@ class SslSecurityTesterTool
   end
 
   def classify_cipher_strength(cipher_name, bits)
-    return 'WEAK' if weak_cipher?(cipher_name)
-    return 'WEAK' if bits < 128
-    return 'STRONG' if bits >= 256
-    'MEDIUM'
+    return "WEAK" if weak_cipher?(cipher_name)
+    return "WEAK" if bits < 128
+    return "STRONG" if bits >= 256
+    "MEDIUM"
   end
 
   def get_key_size(public_key)
@@ -1129,10 +1129,10 @@ class SslSecurityTesterTool
   end
 
   def extract_san_domains(cert)
-    san_extension = cert.extensions.find { |ext| ext.oid == 'subjectAltName' }
+    san_extension = cert.extensions.find { |ext| ext.oid == "subjectAltName" }
     return [] unless san_extension
 
-    san_extension.value.split(',').map { |name| name.strip.sub(/^DNS:/, '') }
+    san_extension.value.split(",").map { |name| name.strip.sub(/^DNS:/, "") }
   rescue StandardError
     []
   end

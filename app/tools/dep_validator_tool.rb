@@ -12,7 +12,7 @@ class DepValidatorTool
   include SecurityTool
 
   # Cache expires after 30 days
-  CACHE_EXPIRATION_DAYS = 30
+  CACHE_EXPIRATION_DAYS = 30 unless defined?(CACHE_EXPIRATION_DAYS)
 
   configure_tool(
     name: "Dependency Validator",
