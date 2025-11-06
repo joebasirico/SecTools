@@ -158,6 +158,10 @@
             <%= render partial: 'tools/code_security_results', locals: { result: @result } %>
           <% elsif @tool_class.name == 'SslSecurityTesterTool' %>
             <%= render partial: 'tools/ssl_security_results', locals: { result: @result } %>
+          <% elsif @tool_class.name == 'SwaggerScannerTool' %>
+            <%= render partial: 'tools/swagger_scanner_results', locals: { result: @result } %>
+          <% elsif @tool_class.name == 'ApiSchemaSecurityReviewerTool' %>
+            <%= render partial: 'tools/api_schema_security_results', locals: { result: @result } %>
           <% elsif @result.is_a?(Hash) %>
             <div class="space-y-4">
               <% @result.each do |key, value| %>

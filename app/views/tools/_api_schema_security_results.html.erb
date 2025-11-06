@@ -1,0 +1,608 @@
+<%# API Schema Security Reviewer results renderer %>
+<div class="space-y-6">
+  <% if result[:error].present? %>
+    <div class="border-2 px-4 py-3 rounded font-mono text-sm" style="background-color: var(--color-error); border-color: var(--color-error); color: var(--color-bg-primary);">
+      <span class="font-bold">[ERROR]</span> <%= result[:error] %>
+    </div>
+  <% else %>
+    <%# Download/Export Buttons %>
+    <section>
+      <div class="flex gap-3 justify-end">
+        <%= link_to "Download CSV", tool_path(format: :csv), class: "px-4 py-2 rounded font-bold text-sm", style: "background-color: var(--color-primary); color: var(--color-bg-primary);" %>
+        <%= link_to "Download PDF", tool_path(format: :pdf), class: "px-4 py-2 rounded font-bold text-sm", style: "background-color: var(--color-primary); color: var(--color-bg-primary);" %>
+        <%= link_to "Download JSON", tool_path(format: :json), class: "px-4 py-2 rounded font-bold text-sm", style: "background-color: var(--color-primary); color: var(--color-bg-primary);" %>
+      </div>
+    </section>
+
+    <%# API Info Section %>
+    <section>
+      <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: var(--color-text-primary);">
+        <span data-theme="hacker">▶</span>
+        <span data-theme="professional" style="display: none;">●</span>
+        <span>API INFORMATION</span>
+      </h3>
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="rounded border p-3" style="border-color: var(--color-border); background-color: var(--color-bg-secondary);">
+          <p class="text-xs uppercase tracking-wider mb-1" style="color: var(--color-text-muted);">API Title</p>
+          <p class="font-mono text-sm font-bold" style="color: var(--color-text-primary);"><%= result.dig(:spec_info, :title) %></p>
+        </div>
+        <div class="rounded border p-3" style="border-color: var(--color-border); background-color: var(--color-bg-secondary);">
+          <p class="text-xs uppercase tracking-wider mb-1" style="color: var(--color-text-muted);">Version</p>
+          <p class="font-mono text-sm" style="color: var(--color-text-primary);"><%= result.dig(:spec_info, :version) %></p>
+        </div>
+        <div class="rounded border p-3" style="border-color: var(--color-border); background-color: var(--color-bg-secondary);">
+          <p class="text-xs uppercase tracking-wider mb-1" style="color: var(--color-text-muted);">Base URL</p>
+          <p class="font-mono text-xs break-all" style="color: var(--color-text-primary);"><%= result[:base_url] %></p>
+        </div>
+        <div class="rounded border p-3" style="border-color: var(--color-border); background-color: var(--color-bg-secondary);">
+          <p class="text-xs uppercase tracking-wider mb-1" style="color: var(--color-text-muted);">Security Grade</p>
+          <p class="font-mono text-2xl font-bold" style="color: <%= result[:grade] == 'A' ? '#4ade80' : result[:grade] == 'B' ? '#facc15' : result[:grade] == 'C' ? '#fb923c' : '#f87171' %>;"><%= result[:grade] || 'N/A' %></p>
+        </div>
+      </div>
+    </section>
+
+    <%# Authentication Status %>
+    <section>
+      <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: var(--color-text-primary);">
+        <span data-theme="hacker">▶</span>
+        <span data-theme="professional" style="display: none;">●</span>
+        <span>AUTHENTICATION STATUS</span>
+      </h3>
+      <div class="rounded border p-4 space-y-3" style="border-color: var(--color-border); background-color: var(--color-bg-secondary);">
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div>
+            <p class="text-xs uppercase tracking-wider mb-1" style="color: var(--color-text-muted);">Status</p>
+            <p class="font-mono text-sm" style="color: var(--color-text-primary);"><%= result[:authentication_status] %></p>
+          </div>
+          <% if result[:login_endpoint] %>
+            <div>
+              <p class="text-xs uppercase tracking-wider mb-1" style="color: var(--color-text-muted);">Login Endpoint</p>
+              <p class="font-mono text-sm" style="color: var(--color-text-primary);"><%= result[:login_endpoint][:method] %> <%= result[:login_endpoint][:path] %></p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </section>
+
+    <%# Test Results Summary %>
+    <section>
+      <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: var(--color-text-primary);">
+        <span data-theme="hacker">▶</span>
+        <span data-theme="professional" style="display: none;">●</span>
+        <span>TEST RESULTS SUMMARY</span>
+      </h3>
+      <div class="grid gap-4 md:grid-cols-2">
+        <%# Unauthenticated Tests %>
+        <div class="rounded border p-4 space-y-3" style="border-color: var(--color-border); background-color: var(--color-bg-secondary);">
+          <h4 class="text-sm font-bold uppercase tracking-wider" style="color: var(--color-text-primary);">
+            <span data-theme="hacker">[ UNAUTHENTICATED TESTS ]</span>
+            <span data-theme="professional" style="display: none;">Unauthenticated Tests</span>
+          </h4>
+          <div class="space-y-2 font-mono text-sm">
+            <div class="flex justify-between">
+              <span style="color: var(--color-text-secondary);">Total Tested:</span>
+              <span class="font-bold" style="color: var(--color-text-primary);"><%= result.dig(:unauthenticated_tests, :total) || 0 %></span>
+            </div>
+            <div class="flex justify-between">
+              <span style="color: var(--color-text-secondary);">Accessible (200s):</span>
+              <span class="font-bold" style="color: #4ade80;"><%= result.dig(:unauthenticated_tests, :accessible)&.length || 0 %></span>
+            </div>
+            <div class="flex justify-between">
+              <span style="color: var(--color-text-secondary);">Forbidden (401/403):</span>
+              <span class="font-bold" style="color: #facc15;"><%= result.dig(:unauthenticated_tests, :forbidden)&.length || 0 %></span>
+            </div>
+            <div class="flex justify-between">
+              <span style="color: var(--color-text-secondary);">Errors:</span>
+              <span class="font-bold" style="color: #f87171;"><%= result.dig(:unauthenticated_tests, :errors)&.length || 0 %></span>
+            </div>
+          </div>
+        </div>
+
+        <%# Authenticated Tests %>
+        <div class="rounded border p-4 space-y-3" style="border-color: var(--color-border); background-color: var(--color-bg-secondary);">
+          <h4 class="text-sm font-bold uppercase tracking-wider" style="color: var(--color-text-primary);">
+            <span data-theme="hacker">[ AUTHENTICATED TESTS ]</span>
+            <span data-theme="professional" style="display: none;">Authenticated Tests</span>
+          </h4>
+          <div class="space-y-2 font-mono text-sm">
+            <div class="flex justify-between">
+              <span style="color: var(--color-text-secondary);">Total Tested:</span>
+              <span class="font-bold" style="color: var(--color-text-primary);"><%= result.dig(:authenticated_tests, :total) || 0 %></span>
+            </div>
+            <div class="flex justify-between">
+              <span style="color: var(--color-text-secondary);">Accessible (200s):</span>
+              <span class="font-bold" style="color: #4ade80;"><%= result.dig(:authenticated_tests, :accessible)&.length || 0 %></span>
+            </div>
+            <div class="flex justify-between">
+              <span style="color: var(--color-text-secondary);">Forbidden (401/403):</span>
+              <span class="font-bold" style="color: #facc15;"><%= result.dig(:authenticated_tests, :forbidden)&.length || 0 %></span>
+            </div>
+            <div class="flex justify-between">
+              <span style="color: var(--color-text-secondary);">Errors:</span>
+              <span class="font-bold" style="color: #f87171;"><%= result.dig(:authenticated_tests, :errors)&.length || 0 %></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <%# Critical Vulnerabilities %>
+    <% if result[:vulnerabilities].present? %>
+      <section>
+        <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: #f87171;">
+          <span>⚠</span>
+          <span>CRITICAL VULNERABILITIES FOUND</span>
+        </h3>
+        <div class="space-y-3">
+          <% result[:vulnerabilities].each do |vuln| %>
+            <div class="rounded border-2 p-4 space-y-2" style="border-color: #f87171; background-color: var(--color-bg-secondary);">
+              <div class="flex items-start justify-between gap-3">
+                <h4 class="font-bold text-sm" style="color: var(--color-text-primary);"><%= vuln[:type] %></h4>
+                <span class="px-2 py-1 rounded text-xs font-bold" style="background-color: #7f1d1d; color: #fecaca;">
+                  <%= vuln[:severity].to_s.upcase %>
+                </span>
+              </div>
+              <% if vuln[:endpoint] %>
+                <p class="font-mono text-xs" style="color: var(--color-text-secondary);"><%= vuln[:endpoint] %></p>
+              <% end %>
+              <p class="text-sm" style="color: var(--color-text-secondary);"><%= vuln[:message] %></p>
+              <% if vuln[:impact] %>
+                <p class="text-xs" style="color: var(--color-text-muted);">
+                  <span class="font-bold">Impact:</span> <%= vuln[:impact] %>
+                </p>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+
+    <%# Warnings %>
+    <% if result[:warnings].present? %>
+      <section>
+        <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: #facc15;">
+          <span>⚠</span>
+          <span>WARNINGS</span>
+        </h3>
+        <div class="space-y-3">
+          <% result[:warnings].each do |warning| %>
+            <div class="rounded border p-3 space-y-2" style="border-color: var(--color-border); background-color: var(--color-bg-secondary);">
+              <h4 class="font-bold text-sm" style="color: var(--color-text-primary);"><%= warning[:type] %></h4>
+              <% if warning[:endpoint] %>
+                <p class="font-mono text-xs" style="color: var(--color-text-secondary);"><%= warning[:endpoint] %></p>
+              <% end %>
+              <p class="text-sm" style="color: var(--color-text-secondary);"><%= warning[:message] %></p>
+              <% if warning[:recommendation] %>
+                <p class="text-xs" style="color: var(--color-text-muted);">
+                  <span class="font-bold">Recommendation:</span> <%= warning[:recommendation] %>
+                </p>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+
+    <%# Unauthenticated Accessible Endpoints %>
+    <% if result.dig(:unauthenticated_tests, :accessible).present? %>
+      <section>
+        <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: var(--color-text-primary);">
+          <span data-theme="hacker">▶</span>
+          <span data-theme="professional" style="display: none;">●</span>
+          <span>ENDPOINTS ACCESSIBLE WITHOUT AUTH (<%= result.dig(:unauthenticated_tests, :accessible).length %>)</span>
+        </h3>
+        <div class="space-y-2">
+          <% result.dig(:unauthenticated_tests, :accessible).each do |endpoint| %>
+            <div class="rounded border p-3 flex items-center justify-between gap-3" style="border-color: var(--color-border); background-color: var(--color-bg-secondary);">
+              <div class="flex-1 min-w-0">
+                <p class="font-mono text-sm font-bold truncate" style="color: var(--color-text-primary);"><%= endpoint[:endpoint] %></p>
+                <% if endpoint[:summary].present? %>
+                  <p class="text-xs truncate" style="color: var(--color-text-secondary);"><%= endpoint[:summary] %></p>
+                <% end %>
+              </div>
+              <span class="px-2 py-1 rounded text-xs font-mono flex-shrink-0" style="background-color: #14532d; color: #bbf7d0;">
+                <%= endpoint[:status_code] %> <%= endpoint[:status_message] %>
+              </span>
+            </div>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+
+    <%# Authenticated Accessible Endpoints %>
+    <% if result.dig(:authenticated_tests, :accessible).present? %>
+      <section>
+        <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: var(--color-text-primary);">
+          <span data-theme="hacker">▶</span>
+          <span data-theme="professional" style="display: none;">●</span>
+          <span>ENDPOINTS ACCESSIBLE WITH AUTH (<%= result.dig(:authenticated_tests, :accessible).length %>)</span>
+        </h3>
+        <div class="space-y-2">
+          <% result.dig(:authenticated_tests, :accessible).each do |endpoint| %>
+            <div class="rounded border p-3 flex items-center justify-between gap-3" style="border-color: var(--color-border); background-color: var(--color-bg-secondary);">
+              <div class="flex-1 min-w-0">
+                <p class="font-mono text-sm font-bold truncate" style="color: var(--color-text-primary);"><%= endpoint[:endpoint] %></p>
+                <% if endpoint[:summary].present? %>
+                  <p class="text-xs truncate" style="color: var(--color-text-secondary);"><%= endpoint[:summary] %></p>
+                <% end %>
+              </div>
+              <span class="px-2 py-1 rounded text-xs font-mono flex-shrink-0" style="background-color: #14532d; color: #bbf7d0;">
+                <%= endpoint[:status_code] %> <%= endpoint[:status_message] %>
+              </span>
+            </div>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+
+    <%# Security Test Results %>
+    <% if result[:security_test_results].present? && result[:security_test_results].values.any?(&:present?) %>
+      <section>
+        <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: var(--color-text-primary);">
+          <span data-theme="hacker">▶</span>
+          <span data-theme="professional" style="display: none;">●</span>
+          <span>SECURITY VULNERABILITY TESTS</span>
+        </h3>
+
+        <div class="space-y-4">
+          <%# IDOR Tests %>
+          <% if result[:security_test_results][:idor_tests].present? %>
+            <div class="rounded border p-4" style="border-color: var(--color-border); background-color: var(--color-bg-secondary);">
+              <h4 class="text-sm font-bold mb-2 flex items-center justify-between cursor-pointer"
+                  style="color: var(--color-text-primary);"
+                  onclick="this.nextElementSibling.classList.toggle('hidden')">
+                <span>
+                  <span data-theme="hacker">[ IDOR (Insecure Direct Object Reference) ]</span>
+                  <span data-theme="professional" style="display: none;">IDOR Tests</span>
+                  <span class="text-xs ml-2" style="color: var(--color-text-muted);">
+                    (<%= result[:security_test_results][:idor_tests].count { |t| t[:status] == :vulnerable } %> vulnerable,
+                     <%= result[:security_test_results][:idor_tests].count { |t| t[:status] == :pass } %> passed)
+                  </span>
+                </span>
+                <span style="color: var(--color-text-muted);">▼</span>
+              </h4>
+              <div class="mt-3 space-y-3">
+                <% result[:security_test_results][:idor_tests].each_with_index do |test, index| %>
+                  <% if test[:status] == :vulnerable %>
+                    <div class="rounded border-2 p-3" style="border-color: #fb923c; background-color: rgba(251, 146, 60, 0.1);">
+                      <div class="flex items-start justify-between mb-2">
+                        <span class="font-bold text-sm" style="color: #fb923c;">⚠ VULNERABLE</span>
+                        <span class="text-xs px-2 py-1 rounded" style="background-color: #fb923c; color: white;">HIGH</span>
+                      </div>
+                      <p class="text-sm font-mono mb-2" style="color: var(--color-text-primary);"><%= test[:endpoint] %></p>
+                      <p class="text-xs mb-2" style="color: var(--color-text-secondary);"><%= test[:message] %></p>
+
+                      <% if test[:reproduction] %>
+                        <details class="mt-3">
+                          <summary class="cursor-pointer text-xs font-bold" style="color: var(--color-primary);">
+                            How to Reproduce ▶
+                          </summary>
+                          <div class="mt-2 p-3 rounded" style="background-color: rgba(0,0,0,0.2);">
+                            <p class="text-xs mb-2" style="color: var(--color-text-secondary);"><%= test[:reproduction][:description] %></p>
+                            <p class="text-xs font-bold mb-1" style="color: var(--color-text-muted);">cURL Command:</p>
+                            <pre class="text-xs p-2 rounded overflow-x-auto" style="background-color: rgba(0,0,0,0.3); color: var(--color-text-primary);"><%= test[:reproduction][:curl] %></pre>
+                            <div class="grid grid-cols-2 gap-2 mt-2">
+                              <div>
+                                <p class="text-xs font-bold" style="color: var(--color-text-muted);">Expected:</p>
+                                <p class="text-xs" style="color: #4ade80;"><%= test[:reproduction][:expected] %></p>
+                              </div>
+                              <div>
+                                <p class="text-xs font-bold" style="color: var(--color-text-muted);">Actual:</p>
+                                <p class="text-xs" style="color: #f87171;"><%= test[:reproduction][:actual] %></p>
+                              </div>
+                            </div>
+                            <p class="text-xs mt-2" style="color: var(--color-text-muted);">
+                              URL: <code style="background-color: rgba(0,0,0,0.3); padding: 2px 4px; border-radius: 2px;"><%= test[:url_tested] %></code>
+                            </p>
+                          </div>
+                        </details>
+                      <% end %>
+                    </div>
+                  <% elsif test[:status] == :pass %>
+                    <div class="text-xs" style="color: var(--color-text-muted);">
+                      ✓ <%= test[:endpoint] %> - <%= test[:message] %>
+                    </div>
+                  <% elsif test[:status] == :tested %>
+                    <div class="text-xs" style="color: var(--color-text-muted);">
+                      ✓ Tested <%= test[:count] %> endpoints - No vulnerabilities found
+                    </div>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+
+          <%# SQL Injection Tests %>
+          <% if result[:security_test_results][:sql_injection_tests].present? %>
+            <div class="rounded border p-4" style="border-color: var(--color-border); background-color: var(--color-bg-secondary);">
+              <h4 class="text-sm font-bold mb-2 flex items-center justify-between cursor-pointer"
+                  style="color: var(--color-text-primary);"
+                  onclick="this.nextElementSibling.classList.toggle('hidden')">
+                <span>
+                  <span data-theme="hacker">[ SQL INJECTION ]</span>
+                  <span data-theme="professional" style="display: none;">SQL Injection Tests</span>
+                  <span class="text-xs ml-2" style="color: var(--color-text-muted);">
+                    (<%= result[:security_test_results][:sql_injection_tests].count { |t| t[:status] == :vulnerable } %> vulnerable,
+                     <%= result[:security_test_results][:sql_injection_tests].count { |t| t[:status] == :pass } %> passed)
+                  </span>
+                </span>
+                <span style="color: var(--color-text-muted);">▼</span>
+              </h4>
+              <div class="mt-3 space-y-3">
+                <% result[:security_test_results][:sql_injection_tests].each do |test| %>
+                  <% if test[:status] == :vulnerable %>
+                    <div class="rounded border-2 p-3" style="border-color: #f87171; background-color: rgba(248, 113, 113, 0.1);">
+                      <div class="flex items-start justify-between mb-2">
+                        <span class="font-bold text-sm" style="color: #f87171;">✗ VULNERABLE</span>
+                        <span class="text-xs px-2 py-1 rounded" style="background-color: #f87171; color: white;">CRITICAL</span>
+                      </div>
+                      <p class="text-sm font-mono mb-2" style="color: var(--color-text-primary);"><%= test[:endpoint] %></p>
+                      <p class="text-xs mb-2" style="color: var(--color-text-secondary);">
+                        <%= test[:message] %>
+                        <% if test[:database_type] %>
+                          - Database: <span class="font-bold"><%= test[:database_type] %></span>
+                        <% end %>
+                      </p>
+
+                      <% if test[:reproduction] %>
+                        <details class="mt-3">
+                          <summary class="cursor-pointer text-xs font-bold" style="color: var(--color-primary);">
+                            How to Reproduce ▶
+                          </summary>
+                          <div class="mt-2 p-3 rounded" style="background-color: rgba(0,0,0,0.2);">
+                            <p class="text-xs mb-2" style="color: var(--color-text-secondary);"><%= test[:reproduction][:description] %></p>
+
+                            <p class="text-xs font-bold mb-1" style="color: var(--color-text-muted);">Payload Used:</p>
+                            <code class="text-xs p-2 rounded block" style="background-color: rgba(0,0,0,0.3); color: #fb923c;"><%= test[:reproduction][:payload_used] %></code>
+
+                            <p class="text-xs font-bold mb-1 mt-2" style="color: var(--color-text-muted);">cURL Command:</p>
+                            <pre class="text-xs p-2 rounded overflow-x-auto" style="background-color: rgba(0,0,0,0.3); color: var(--color-text-primary);"><%= test[:reproduction][:curl] %></pre>
+
+                            <div class="grid grid-cols-2 gap-2 mt-2">
+                              <div>
+                                <p class="text-xs font-bold" style="color: var(--color-text-muted);">Expected:</p>
+                                <p class="text-xs" style="color: #4ade80;"><%= test[:reproduction][:expected] %></p>
+                              </div>
+                              <div>
+                                <p class="text-xs font-bold" style="color: var(--color-text-muted);">Actual:</p>
+                                <p class="text-xs" style="color: #f87171;"><%= test[:reproduction][:actual] %></p>
+                              </div>
+                            </div>
+
+                            <% if test[:error_snippet] %>
+                              <p class="text-xs font-bold mb-1 mt-2" style="color: var(--color-text-muted);">Error Snippet:</p>
+                              <pre class="text-xs p-2 rounded overflow-x-auto" style="background-color: rgba(0,0,0,0.3); color: #f87171;"><%= test[:error_snippet][0..200] %></pre>
+                            <% end %>
+
+                            <div class="mt-2 p-2 rounded" style="background-color: rgba(74, 222, 128, 0.1); border-left: 3px solid #4ade80;">
+                              <p class="text-xs font-bold mb-1" style="color: #4ade80;">Mitigation:</p>
+                              <p class="text-xs" style="color: var(--color-text-secondary);"><%= test[:reproduction][:mitigation] %></p>
+                            </div>
+                          </div>
+                        </details>
+                      <% end %>
+                    </div>
+                  <% elsif test[:status] == :pass %>
+                    <div class="text-xs" style="color: var(--color-text-muted);">
+                      ✓ <%= test[:endpoint] %> - <%= test[:message] %>
+                    </div>
+                  <% elsif test[:status] == :tested %>
+                    <div class="text-xs" style="color: var(--color-text-muted);">
+                      ✓ Tested <%= test[:count] %> endpoints - No vulnerabilities found
+                    </div>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+
+          <%# JSON Injection Tests %>
+          <% if result[:security_test_results][:json_injection_tests].present? %>
+            <div class="rounded border p-4" style="border-color: var(--color-border); background-color: var(--color-bg-secondary);">
+              <h4 class="text-sm font-bold mb-2" style="color: var(--color-text-primary);">
+                <span data-theme="hacker">[ JSON/NoSQL INJECTION ]</span>
+                <span data-theme="professional" style="display: none;">JSON Injection Tests</span>
+              </h4>
+              <% result[:security_test_results][:json_injection_tests].each do |test| %>
+                <div class="text-sm mb-2" style="color: var(--color-text-secondary);">
+                  <% if test[:status] == :vulnerable %>
+                    <span style="color: #f87171;">✗ <%= test[:endpoint] %> - <%= test[:message] %></span>
+                  <% else %>
+                    <span style="color: var(--color-text-muted);">✓ Tested <%= test[:count] %> endpoints</span>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+
+          <%# XML Injection Tests %>
+          <% if result[:security_test_results][:xml_injection_tests].present? %>
+            <div class="rounded border p-4" style="border-color: var(--color-border); background-color: var(--color-bg-secondary);">
+              <h4 class="text-sm font-bold mb-2" style="color: var(--color-text-primary);">
+                <span data-theme="hacker">[ XML/XXE INJECTION ]</span>
+                <span data-theme="professional" style="display: none;">XML Injection Tests</span>
+              </h4>
+              <% result[:security_test_results][:xml_injection_tests].each do |test| %>
+                <div class="text-sm mb-2" style="color: var(--color-text-secondary);">
+                  <% if test[:status] == :vulnerable %>
+                    <span style="color: #f87171;">✗ <%= test[:endpoint] %> - <%= test[:message] %></span>
+                  <% else %>
+                    <span style="color: var(--color-text-muted);">✓ Tested <%= test[:count] %> endpoints</span>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+
+          <%# Command Injection Tests %>
+          <% if result[:security_test_results][:command_injection_tests].present? %>
+            <div class="rounded border p-4" style="border-color: var(--color-border); background-color: var(--color-bg-secondary);">
+              <h4 class="text-sm font-bold mb-2" style="color: var(--color-text-primary);">
+                <span data-theme="hacker">[ COMMAND INJECTION ]</span>
+                <span data-theme="professional" style="display: none;">Command Injection Tests</span>
+              </h4>
+              <% result[:security_test_results][:command_injection_tests].each do |test| %>
+                <div class="text-sm mb-2" style="color: var(--color-text-secondary);">
+                  <% if test[:status] == :vulnerable %>
+                    <span style="color: #f87171;">✗ <%= test[:endpoint] %> - <%= test[:message] %></span>
+                  <% else %>
+                    <span style="color: var(--color-text-muted);">✓ Tested <%= test[:count] %> endpoints</span>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+
+          <%# XSS Tests %>
+          <% if result[:security_test_results][:xss_tests].present? %>
+            <div class="rounded border p-4" style="border-color: var(--color-border); background-color: var(--color-bg-secondary);">
+              <h4 class="text-sm font-bold mb-2" style="color: var(--color-text-primary);">
+                <span data-theme="hacker">[ CROSS-SITE SCRIPTING (XSS) ]</span>
+                <span data-theme="professional" style="display: none;">XSS Tests</span>
+              </h4>
+              <% result[:security_test_results][:xss_tests].each do |test| %>
+                <div class="text-sm mb-2" style="color: var(--color-text-secondary);">
+                  <% if test[:status] == :vulnerable %>
+                    <span style="color: #fb923c;">⚠ <%= test[:endpoint] %> - <%= test[:message] %></span>
+                  <% else %>
+                    <span style="color: var(--color-text-muted);">✓ Tested <%= test[:count] %> endpoints</span>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+
+          <%# Authentication Bypass Tests %>
+          <% if result[:security_test_results][:auth_bypass_tests].present? %>
+            <div class="rounded border p-4" style="border-color: var(--color-border); background-color: var(--color-bg-secondary);">
+              <h4 class="text-sm font-bold mb-2" style="color: var(--color-text-primary);">
+                <span data-theme="hacker">[ AUTHENTICATION BYPASS ]</span>
+                <span data-theme="professional" style="display: none;">Authentication Bypass Tests</span>
+              </h4>
+              <% result[:security_test_results][:auth_bypass_tests].each do |test| %>
+                <div class="text-sm mb-2" style="color: var(--color-text-secondary);">
+                  <% if test[:status] == :vulnerable %>
+                    <span style="color: #f87171;">✗ <%= test[:endpoint] %> - <%= test[:message] %></span>
+                  <% else %>
+                    <span style="color: var(--color-text-muted);">✓ Tested <%= test[:count] %> endpoints</span>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+
+          <%# Session Management Tests %>
+          <% if result[:security_test_results][:session_tests].present? %>
+            <div class="rounded border p-4" style="border-color: var(--color-border); background-color: var(--color-bg-secondary);">
+              <h4 class="text-sm font-bold mb-2" style="color: var(--color-text-primary);">
+                <span data-theme="hacker">[ SESSION MANAGEMENT ]</span>
+                <span data-theme="professional" style="display: none;">Session Management Tests</span>
+              </h4>
+              <% result[:security_test_results][:session_tests].each do |test| %>
+                <div class="text-sm mb-2" style="color: var(--color-text-secondary);">
+                  <% if test[:status] == :warning %>
+                    <span style="color: #facc15;">⚠ <%= test[:test] %> - <%= test[:message] %></span>
+                  <% elsif test[:status] == :info %>
+                    <span style="color: #60a5fa;">ℹ <%= test[:test] %> - <%= test[:message] %></span>
+                  <% else %>
+                    <span style="color: var(--color-text-muted);">✓ Session tests completed</span>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+
+          <%# Brute Force Tests %>
+          <% if result[:security_test_results][:brute_force_tests].present? %>
+            <div class="rounded border p-4" style="border-color: var(--color-border); background-color: var(--color-bg-secondary);">
+              <h4 class="text-sm font-bold mb-2" style="color: var(--color-text-primary);">
+                <span data-theme="hacker">[ BRUTE FORCE PROTECTION ]</span>
+                <span data-theme="professional" style="display: none;">Brute Force Tests</span>
+              </h4>
+              <% result[:security_test_results][:brute_force_tests].each do |test| %>
+                <div class="text-sm mb-2" style="color: var(--color-text-secondary);">
+                  <% if test[:status] == :warning %>
+                    <span style="color: #facc15;">⚠ <%= test[:test] %> - <%= test[:message] %></span>
+                  <% elsif test[:status] == :pass %>
+                    <span style="color: #4ade80;">✓ <%= test[:test] %> - <%= test[:message] %></span>
+                  <% elsif test[:status] == :error %>
+                    <span style="color: var(--color-text-muted);">⊗ <%= test[:test] %> - <%= test[:message] %></span>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+
+          <%# Rate Limiting Tests %>
+          <% if result[:security_test_results][:rate_limit_tests].present? %>
+            <div class="rounded border p-4" style="border-color: var(--color-border); background-color: var(--color-bg-secondary);">
+              <h4 class="text-sm font-bold mb-2" style="color: var(--color-text-primary);">
+                <span data-theme="hacker">[ RATE LIMITING ]</span>
+                <span data-theme="professional" style="display: none;">Rate Limiting Tests</span>
+              </h4>
+              <% result[:security_test_results][:rate_limit_tests].each do |test| %>
+                <div class="text-sm mb-2" style="color: var(--color-text-secondary);">
+                  <% if test[:status] == :warning %>
+                    <span style="color: #facc15;">⚠ <%= test[:test] %> - <%= test[:message] %></span>
+                  <% elsif test[:status] == :pass %>
+                    <span style="color: #4ade80;">✓ <%= test[:test] %> - <%= test[:message] %></span>
+                  <% elsif test[:status] == :error %>
+                    <span style="color: var(--color-text-muted);">⊗ <%= test[:test] %> - <%= test[:message] %></span>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+
+    <%# Recommendations %>
+    <% if result[:recommendations].present? %>
+      <section>
+        <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: var(--color-text-primary);">
+          <span data-theme="hacker">▶</span>
+          <span data-theme="professional" style="display: none;">●</span>
+          <span>RECOMMENDATIONS</span>
+        </h3>
+        <div class="space-y-2">
+          <% result[:recommendations].each_with_index do |rec, index| %>
+            <div class="rounded border p-3" style="border-color: var(--color-border); background-color: var(--color-bg-secondary);">
+              <p class="text-sm" style="color: var(--color-text-secondary);">
+                <span class="font-bold" style="color: var(--color-text-primary);"><%= index + 1 %>.</span>
+                <%= rec %>
+              </p>
+            </div>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+
+    <%# Security Score %>
+    <section>
+      <div class="rounded border p-6 text-center space-y-3" style="border-color: var(--color-border); background-color: var(--color-bg-secondary);">
+        <p class="text-xs uppercase tracking-wider" style="color: var(--color-text-muted);">Overall Security Score</p>
+        <div class="flex items-center justify-center gap-4">
+          <div class="text-5xl font-bold font-mono" style="color: <%= result[:security_score] >= 80 ? '#4ade80' : result[:security_score] >= 60 ? '#facc15' : '#f87171' %>;">
+            <%= result[:security_score] %>
+          </div>
+          <div class="text-6xl font-bold font-mono" style="color: <%= result[:grade] == 'A' ? '#4ade80' : result[:grade] == 'B' ? '#facc15' : result[:grade] == 'C' ? '#fb923c' : '#f87171' %>;">
+            <%= result[:grade] %>
+          </div>
+        </div>
+        <p class="text-sm uppercase tracking-wider font-bold" style="color: var(--color-text-secondary);">
+          Risk Level:
+          <span style="color: <%= case result[:risk_level]
+            when :critical then '#f87171'
+            when :high then '#fb923c'
+            when :medium then '#facc15'
+            when :low then '#4ade80'
+            else '#9ca3af'
+            end %>;">
+            <%= result[:risk_level].to_s.upcase %>
+          </span>
+        </p>
+      </div>
+    </section>
+  <% end %>
+</div>
