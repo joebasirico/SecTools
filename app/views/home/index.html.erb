@@ -30,40 +30,49 @@
 
     <% if @categories.any? %>
       <% @categories.each do |category| %>
-        <section class="mb-12">
-          <div class="flex items-center mb-6">
-            <div class="h-px flex-grow" style="background-color: var(--color-primary);"></div>
-            <h2 class="text-2xl font-bold px-4 theme-header" style="color: var(--color-text-primary);">
+        <section class="mb-10">
+          <div class="flex items-center mb-4">
+            <h2 class="text-xl font-bold theme-header" style="color: var(--color-text-primary);">
               <span data-theme="hacker">[ <%= category.upcase %> ]</span>
               <span data-theme="professional" style="display: none;"><%= category.titleize %></span>
             </h2>
-            <div class="h-px flex-grow" style="background-color: var(--color-primary);"></div>
+            <div class="ml-4 h-px flex-grow" style="background-color: var(--color-border);"></div>
+            <span class="ml-4 text-xs" style="color: var(--color-text-muted); font-family: var(--font-family);">
+              <%= @tools_by_category[category].length %>
+              <span data-theme="hacker">TOOL<%= @tools_by_category[category].length > 1 ? 'S' : '' %></span>
+              <span data-theme="professional" style="display: none;">tool<%= @tools_by_category[category].length > 1 ? 's' : '' %></span>
+            </span>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="space-y-3">
             <% @tools_by_category[category].each do |tool_class| %>
-              <div class="theme-card scan-line">
-                <div class="flex items-start mb-3">
-                  <span class="text-2xl mr-2" style="color: var(--color-text-secondary);" data-theme="hacker">▶</span>
-                  <span class="text-2xl mr-2" style="color: var(--color-primary); display: none;" data-theme="professional">●</span>
-                  <h3 class="text-xl font-bold theme-header" style="color: var(--color-text-tertiary);">
-                    <%= tool_class.tool_name %>
-                  </h3>
+              <%= link_to tool_path(tool_class.name.underscore.gsub('_tool', '')),
+                  class: "block theme-card hover:scale-[1.01] transition-all duration-200" do %>
+                <div class="flex items-start gap-4">
+                  <div class="flex-shrink-0 mt-1">
+                    <span class="text-xl" style="color: var(--color-primary);" data-theme="hacker">▶</span>
+                    <span class="text-xl" style="color: var(--color-primary); display: none;" data-theme="professional">●</span>
+                  </div>
+
+                  <div class="flex-grow min-w-0">
+                    <div class="flex items-baseline gap-3 mb-2">
+                      <h3 class="text-lg font-bold theme-header" style="color: var(--color-text-primary);">
+                        <%= tool_class.tool_name %>
+                      </h3>
+                    </div>
+                    <p class="text-sm leading-relaxed" style="color: var(--color-text-secondary); font-family: var(--font-family);">
+                      <%= tool_class.tool_description %>
+                    </p>
+                  </div>
+
+                  <div class="flex-shrink-0 flex items-center">
+                    <span class="text-sm font-bold theme-link whitespace-nowrap">
+                      <span data-theme="hacker">EXECUTE →</span>
+                      <span data-theme="professional" style="display: none;">Launch →</span>
+                    </span>
+                  </div>
                 </div>
-                <p class="mb-4 text-sm leading-relaxed" style="color: var(--color-text-secondary); font-family: var(--font-family);">
-                  <%= tool_class.tool_description %>
-                </p>
-                <div class="pt-4" style="border-top: 1px solid var(--color-border);">
-                  <%= link_to tool_path(tool_class.name.underscore.gsub('_tool', '')),
-                      class: "inline-flex items-center text-sm font-bold transition-colors theme-link" do %>
-                    <span class="mr-2" data-theme="hacker">></span>
-                    <span class="underline" data-theme="hacker">EXECUTE TOOL</span>
-                    <span class="underline" data-theme="professional" style="display: none;">Launch Tool</span>
-                    <span class="ml-2 animate-pulse" data-theme="hacker">█</span>
-                    <span class="ml-2" data-theme="professional" style="display: none;">→</span>
-                  <% end %>
-                </div>
-              </div>
+              <% end %>
             <% end %>
           </div>
         </section>
