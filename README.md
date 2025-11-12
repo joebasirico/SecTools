@@ -213,6 +213,28 @@ bundle install
 
 ## Deployment
 
+### Quick Deployment to Ubuntu VPS (Recommended)
+
+Deploy to a subdomain on your Ubuntu VPS in 15 minutes using the automated script:
+
+```bash
+# On your VPS
+curl -o deploy.sh https://raw.githubusercontent.com/YOUR_USERNAME/SecTools/main/deploy.sh
+chmod +x deploy.sh
+./deploy.sh
+```
+
+The script will:
+- ✅ Install Ruby, Rails, PostgreSQL, Nginx, Redis
+- ✅ Clone and configure the application
+- ✅ Setup database and precompile assets
+- ✅ Configure SSL with Let's Encrypt
+- ✅ Start the application as a systemd service
+
+**See [DEPLOY_QUICK.md](DEPLOY_QUICK.md) for the complete quick-start guide**
+
+**See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed manual deployment instructions**
+
 ### Docker
 
 A Dockerfile is included for containerized deployment:
@@ -230,6 +252,22 @@ The application is configured for Kamal deployment:
 kamal setup
 kamal deploy
 ```
+
+### Environment Configuration
+
+Copy `.env.example` to `.env.production` and configure:
+
+```bash
+cp .env.example .env.production
+nano .env.production
+```
+
+Required variables:
+- `SECRET_KEY_BASE`: Generate with `rails secret`
+- `DATABASE_URL`: PostgreSQL connection string
+- `RAILS_ENV=production`
+
+See [.env.example](.env.example) for all available configuration options.
 
 ## Contributing
 
