@@ -25,13 +25,23 @@
         </div>
       <% end %>
 
-      <div class="theme-card mb-6">
-        <h2 class="text-xl font-bold mb-4 theme-header flex items-center" style="color: var(--color-text-primary);">
-          <span class="mr-2">▶</span>
-          INPUT PARAMETERS
-        </h2>
-        <%= form_with url: execute_tool_path(@tool_instance.class.name.underscore.gsub('_tool', '')),
-                      method: :post, local: true, data: { turbo: false }, multipart: true, class: "space-y-4", id: "tool-execution-form" do |f| %>
+      <% if @tool_class.name == 'BrowserFingerprintTool' %>
+        <!-- Custom form for Browser Fingerprint Tool -->
+        <div class="theme-card mb-6">
+          <h2 class="text-xl font-bold mb-4 theme-header flex items-center" style="color: var(--color-text-primary);">
+            <span class="mr-2">▶</span>
+            ANALYZE YOUR BROWSER
+          </h2>
+          <%= render partial: 'tools/browser_fingerprint_form' %>
+        </div>
+      <% else %>
+        <div class="theme-card mb-6">
+          <h2 class="text-xl font-bold mb-4 theme-header flex items-center" style="color: var(--color-text-primary);">
+            <span class="mr-2">▶</span>
+            INPUT PARAMETERS
+          </h2>
+          <%= form_with url: execute_tool_path(@tool_instance.class.name.underscore.gsub('_tool', '')),
+                        method: :post, local: true, data: { turbo: false }, multipart: true, class: "space-y-4", id: "tool-execution-form" do |f| %>
 
           <% @tool_class.tool_inputs.each do |input| %>
             <div>
@@ -108,6 +118,7 @@
           </div>
         <% end %>
       </div>
+      <% end %>
 
       <!-- Debug: @result present? <%= @result.present? %>, @formatted_result present? <%= @formatted_result.present? %> -->
 
@@ -152,7 +163,9 @@
             SCAN RESULTS
           </h2>
 
-          <% if @tool_class.name == 'DepValidatorTool' %>
+          <% if @tool_class.name == 'BrowserFingerprintTool' %>
+            <%= render partial: 'tools/browser_fingerprint_results', locals: { result: @result } %>
+          <% elsif @tool_class.name == 'DepValidatorTool' %>
             <%= render partial: 'tools/dependency_tree', locals: { result: @result } %>
           <% elsif @tool_class.name == 'CodeSecurityScannerTool' %>
             <%= render partial: 'tools/code_security_results', locals: { result: @result } %>

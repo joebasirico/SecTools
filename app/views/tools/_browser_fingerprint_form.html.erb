@@ -1,0 +1,283 @@
+<div class="space-y-6">
+  <!-- IP Address Display -->
+  <div class="border-2 rounded-lg p-6 text-center" style="background-color: var(--color-bg-secondary); border-color: var(--color-primary);">
+    <p class="font-mono text-xs font-bold mb-2" style="color: var(--color-text-muted);">YOUR IP ADDRESS</p>
+    <p class="font-mono text-3xl font-bold" style="color: var(--color-primary);"><%= @user_ip_address %></p>
+    <p class="font-mono text-xs mt-2" style="color: var(--color-text-secondary);">
+      This is visible to every website you visit
+    </p>
+  </div>
+
+  <!-- EFF Reference Banner -->
+  <div class="border-2 rounded-lg p-4 mb-6" style="background-color: var(--color-bg-secondary); border-color: var(--color-primary);">
+    <div class="flex items-start">
+      <svg class="w-6 h-6 mr-3 flex-shrink-0" style="color: var(--color-primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      <div>
+        <p class="font-mono text-sm mb-2" style="color: var(--color-text-primary);">
+          <strong>Learn More About Browser Fingerprinting</strong>
+        </p>
+        <p class="font-mono text-xs mb-2" style="color: var(--color-text-secondary);">
+          This tool is based on research from the Electronic Frontier Foundation (EFF).
+          Visit their Cover Your Tracks project to learn more about protecting your privacy online.
+        </p>
+        <a href="https://coveryourtracks.eff.org/" target="_blank" rel="noopener noreferrer"
+           class="inline-flex items-center font-mono text-sm font-bold transition-colors hover:underline"
+           style="color: var(--color-primary);">
+          → Visit Cover Your Tracks
+          <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info Box -->
+  <div class="border rounded-lg p-4" style="background-color: var(--color-bg-secondary); border-color: var(--color-border);">
+    <p class="font-mono text-sm mb-2" style="color: var(--color-text-primary);">
+      This tool will collect your browser's unique characteristics to generate a fingerprint.
+    </p>
+    <p class="font-mono text-xs" style="color: var(--color-text-secondary);">
+      The data collected includes: user agent, screen resolution, timezone, installed fonts, canvas fingerprint, and more.
+      All data is hashed using SHA-512 before being stored.
+    </p>
+  </div>
+
+  <!-- Hidden Form -->
+  <form action="/tools/browser_fingerprint/execute" method="post" id="fingerprint-form" data-turbo="false">
+    <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+    <input type="hidden" name="tool[user_agent]" id="fp_user_agent">
+    <input type="hidden" name="tool[screen_resolution]" id="fp_screen_resolution">
+    <input type="hidden" name="tool[color_depth]" id="fp_color_depth">
+    <input type="hidden" name="tool[timezone]" id="fp_timezone">
+    <input type="hidden" name="tool[language]" id="fp_language">
+    <input type="hidden" name="tool[platform]" id="fp_platform">
+    <input type="hidden" name="tool[plugins]" id="fp_plugins">
+    <input type="hidden" name="tool[canvas_hash]" id="fp_canvas_hash">
+    <input type="hidden" name="tool[webgl_hash]" id="fp_webgl_hash">
+    <input type="hidden" name="tool[fonts]" id="fp_fonts">
+    <input type="hidden" name="tool[has_local_storage]" id="fp_has_local_storage">
+    <input type="hidden" name="tool[has_session_storage]" id="fp_has_session_storage">
+    <input type="hidden" name="tool[has_indexed_db]" id="fp_has_indexed_db">
+    <input type="hidden" name="tool[cpu_class]" id="fp_cpu_class">
+    <input type="hidden" name="tool[device_memory]" id="fp_device_memory">
+    <input type="hidden" name="tool[hardware_concurrency]" id="fp_hardware_concurrency">
+    <input type="hidden" name="tool[max_touch_points]" id="fp_max_touch_points">
+    <input type="hidden" name="tool[do_not_track]" id="fp_do_not_track">
+    <input type="hidden" name="tool[cookies_enabled]" id="fp_cookies_enabled">
+
+    <!-- Analyze Button -->
+    <div class="mt-4">
+      <button type="button" id="analyze-fingerprint-btn"
+              class="w-full theme-button cursor-pointer font-mono text-sm tracking-wider">
+        [ ANALYZE MY BROWSER FINGERPRINT ]
+      </button>
+    </div>
+  </form>
+
+  <!-- Status Display -->
+  <div id="collection-status" class="hidden border rounded-lg p-4 mt-4" style="background-color: var(--color-bg-secondary); border-color: var(--color-border);">
+    <p class="font-mono text-sm" style="color: var(--color-text-primary);">
+      <span id="status-message">Collecting browser data...</span>
+    </p>
+  </div>
+</div>
+
+<script>
+(function() {
+  document.addEventListener('DOMContentLoaded', function() {
+    const analyzeBtn = document.getElementById('analyze-fingerprint-btn');
+    const statusDiv = document.getElementById('collection-status');
+    const statusMessage = document.getElementById('status-message');
+    const loadingSpinner = document.getElementById('loading-spinner');
+    const form = document.getElementById('fingerprint-form');
+
+    if (!analyzeBtn) {
+      console.error('Analyze button not found');
+      return;
+    }
+
+    console.log('Fingerprint form script loaded');
+
+    analyzeBtn.addEventListener('click', async function() {
+      console.log('Button clicked!');
+
+      // Show status
+      statusDiv.classList.remove('hidden');
+      statusMessage.textContent = 'Collecting browser fingerprint data...';
+      analyzeBtn.disabled = true;
+      analyzeBtn.textContent = '[ ANALYZING... ]';
+
+      try {
+        // Collect all fingerprint data
+        const fingerprintData = await collectFingerprintData();
+        console.log('Fingerprint data collected');
+
+        // Populate hidden form fields
+        document.getElementById('fp_user_agent').value = fingerprintData.user_agent;
+        document.getElementById('fp_screen_resolution').value = fingerprintData.screen_resolution;
+        document.getElementById('fp_color_depth').value = fingerprintData.color_depth;
+        document.getElementById('fp_timezone').value = fingerprintData.timezone;
+        document.getElementById('fp_language').value = fingerprintData.language;
+        document.getElementById('fp_platform').value = fingerprintData.platform;
+        document.getElementById('fp_plugins').value = fingerprintData.plugins;
+        document.getElementById('fp_canvas_hash').value = fingerprintData.canvas_hash;
+        document.getElementById('fp_webgl_hash').value = fingerprintData.webgl_hash;
+        document.getElementById('fp_fonts').value = fingerprintData.fonts;
+        document.getElementById('fp_has_local_storage').value = fingerprintData.has_local_storage;
+        document.getElementById('fp_has_session_storage').value = fingerprintData.has_session_storage;
+        document.getElementById('fp_has_indexed_db').value = fingerprintData.has_indexed_db;
+        document.getElementById('fp_cpu_class').value = fingerprintData.cpu_class;
+        document.getElementById('fp_device_memory').value = fingerprintData.device_memory;
+        document.getElementById('fp_hardware_concurrency').value = fingerprintData.hardware_concurrency;
+        document.getElementById('fp_max_touch_points').value = fingerprintData.max_touch_points;
+        document.getElementById('fp_do_not_track').value = fingerprintData.do_not_track;
+        document.getElementById('fp_cookies_enabled').value = fingerprintData.cookies_enabled;
+
+        // Show loading spinner
+        if (loadingSpinner) {
+          loadingSpinner.classList.remove('hidden');
+          loadingSpinner.style.display = 'block';
+          loadingSpinner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        statusMessage.textContent = 'Sending data to server for analysis...';
+
+        // Submit the form
+        console.log('Submitting form...');
+        form.submit();
+      } catch (error) {
+        console.error('Error:', error);
+        statusMessage.textContent = 'Error: ' + error.message;
+        statusMessage.style.color = '#ef4444';
+        analyzeBtn.disabled = false;
+        analyzeBtn.textContent = '[ ANALYZE MY BROWSER FINGERPRINT ]';
+        if (loadingSpinner) {
+          loadingSpinner.style.display = 'none';
+        }
+      }
+    });
+
+    async function collectFingerprintData() {
+      const data = {};
+      data.user_agent = navigator.userAgent;
+      data.screen_resolution = screen.width + 'x' + screen.height;
+      data.color_depth = screen.colorDepth;
+      data.timezone = new Date().getTimezoneOffset();
+      data.language = navigator.language || navigator.userLanguage;
+      data.platform = navigator.platform;
+      
+      const plugins = [];
+      if (navigator.plugins) {
+        for (let i = 0; i < navigator.plugins.length; i++) {
+          plugins.push(navigator.plugins[i].name);
+        }
+      }
+      data.plugins = plugins.join(',');
+
+      data.canvas_hash = await getCanvasFingerprint();
+      data.webgl_hash = getWebGLFingerprint();
+      data.fonts = await detectFonts();
+      data.has_local_storage = typeof(Storage) !== 'undefined' && !!window.localStorage;
+      data.has_session_storage = typeof(Storage) !== 'undefined' && !!window.sessionStorage;
+      data.has_indexed_db = !!window.indexedDB;
+      data.cpu_class = navigator.cpuClass || 'unknown';
+      data.device_memory = navigator.deviceMemory || 'unknown';
+      data.hardware_concurrency = navigator.hardwareConcurrency || 'unknown';
+      data.max_touch_points = navigator.maxTouchPoints || 0;
+      data.do_not_track = navigator.doNotTrack || navigator.msDoNotTrack || window.doNotTrack || 'unknown';
+      data.cookies_enabled = navigator.cookieEnabled;
+
+      return data;
+    }
+
+    async function getCanvasFingerprint() {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 200;
+        canvas.height = 50;
+        const ctx = canvas.getContext('2d');
+        ctx.textBaseline = 'top';
+        ctx.font = '14px Arial';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillStyle = '#f60';
+        ctx.fillRect(125, 1, 62, 20);
+        ctx.fillStyle = '#069';
+        ctx.fillText('Browser Fingerprint', 2, 15);
+        ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+        ctx.fillText('Canvas FP', 4, 17);
+        const dataURL = canvas.toDataURL();
+        return await simpleHash(dataURL);
+      } catch (e) {
+        return 'unavailable';
+      }
+    }
+
+    function getWebGLFingerprint() {
+      try {
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (!gl) return 'unavailable';
+        const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+        if (debugInfo) {
+          const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+          const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+          return vendor + '~' + renderer;
+        }
+        return 'limited';
+      } catch (e) {
+        return 'unavailable';
+      }
+    }
+
+    async function detectFonts() {
+      const baseFonts = ['monospace', 'sans-serif', 'serif'];
+      const testFonts = [
+        'Arial', 'Verdana', 'Times New Roman', 'Courier New', 'Georgia',
+        'Palatino', 'Garamond', 'Comic Sans MS', 'Trebuchet MS', 'Impact',
+        'Arial Black', 'Tahoma', 'Lucida Console', 'Courier', 'Helvetica',
+        'Monaco', 'Consolas', 'Menlo', 'Ubuntu', 'Roboto'
+      ];
+      const detectedFonts = [];
+      const testString = 'mmmmmmmmmmlli';
+      const testSize = '72px';
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const baseFontWidths = {};
+      baseFonts.forEach(function(font) {
+        ctx.font = testSize + ' ' + font;
+        baseFontWidths[font] = ctx.measureText(testString).width;
+      });
+      for (let i = 0; i < testFonts.length; i++) {
+        const font = testFonts[i];
+        let detected = false;
+        for (let j = 0; j < baseFonts.length; j++) {
+          const baseFont = baseFonts[j];
+          ctx.font = testSize + " '" + font + "', " + baseFont;
+          const width = ctx.measureText(testString).width;
+          if (width !== baseFontWidths[baseFont]) {
+            detected = true;
+            break;
+          }
+        }
+        if (detected) {
+          detectedFonts.push(font);
+        }
+      }
+      return detectedFonts.join(',');
+    }
+
+    async function simpleHash(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+      }
+      return hash.toString(16);
+    }
+  });
+})();
+</script>

@@ -1,0 +1,170 @@
+<div class="space-y-6">
+  <!-- EFF Reference Banner -->
+  <div class="border-2 rounded-lg p-4 mb-6" style="background-color: var(--color-bg-secondary); border-color: var(--color-primary);">
+    <div class="flex items-start">
+      <svg class="w-6 h-6 mr-3 flex-shrink-0" style="color: var(--color-primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      <div>
+        <p class="font-mono text-sm mb-2" style="color: var(--color-text-primary);">
+          <strong>Learn More About Browser Fingerprinting</strong>
+        </p>
+        <p class="font-mono text-xs mb-2" style="color: var(--color-text-secondary);">
+          This tool is based on research from the Electronic Frontier Foundation (EFF).
+          Visit their Cover Your Tracks project to learn more about protecting your privacy online.
+        </p>
+        <a href="https://coveryourtracks.eff.org/" target="_blank" rel="noopener noreferrer"
+           class="inline-flex items-center font-mono text-sm font-bold transition-colors hover:underline"
+           style="color: var(--color-primary);">
+          → Visit Cover Your Tracks
+          <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Uniqueness & Tracking Scores -->
+  <div class="grid md:grid-cols-2 gap-4">
+    <!-- Uniqueness Score -->
+    <div class="border rounded-lg p-6" style="background-color: var(--color-bg-secondary); border-color: var(--color-border);">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-mono text-sm font-bold" style="color: var(--color-text-muted);">UNIQUENESS SCORE</h3>
+        <span class="text-3xl font-bold" style="color: var(--color-primary);"><%= result[:uniqueness_score] %>/100</span>
+      </div>
+      <div class="mb-3">
+        <div class="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
+          <div class="h-3 rounded-full transition-all duration-500"
+               style="width: <%= result[:uniqueness_score] %>%; background-color: <%= uniqueness_color(result[:uniqueness_score]) %>;">
+          </div>
+        </div>
+      </div>
+      <p class="font-mono text-lg font-bold mb-2" style="color: <%= uniqueness_color(result[:uniqueness_score]) %>;">
+        <%= result[:uniqueness_status] %>
+      </p>
+      <p class="font-mono text-xs" style="color: var(--color-text-secondary);">
+        <% if result[:uniqueness_score] > 70 %>
+          Your browser has a highly unique fingerprint compared to <%= result[:total_fingerprints_in_database] %> fingerprints in our database.
+        <% elsif result[:uniqueness_score] > 40 %>
+          Your browser fingerprint is moderately unique.
+        <% else %>
+          Your browser fingerprint is common and blends in with others.
+        <% end %>
+      </p>
+    </div>
+
+    <!-- Tracking Likelihood -->
+    <div class="border rounded-lg p-6" style="background-color: var(--color-bg-secondary); border-color: var(--color-border);">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-mono text-sm font-bold" style="color: var(--color-text-muted);">TRACKING LIKELIHOOD</h3>
+        <span class="text-3xl font-bold" style="color: var(--color-warning);"><%= result[:tracking_likelihood] %>/100</span>
+      </div>
+      <div class="mb-3">
+        <div class="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
+          <div class="h-3 rounded-full transition-all duration-500"
+               style="width: <%= result[:tracking_likelihood] %>%; background-color: <%= tracking_color(result[:tracking_likelihood]) %>;">
+          </div>
+        </div>
+      </div>
+      <p class="font-mono text-lg font-bold mb-2" style="color: <%= tracking_color(result[:tracking_likelihood]) %>;">
+        <%= result[:tracking_status] %>
+      </p>
+      <p class="font-mono text-xs" style="color: var(--color-text-secondary);">
+        <% if result[:tracking_likelihood] > 70 %>
+          Trackers can easily identify and follow you across websites.
+        <% elsif result[:tracking_likelihood] > 40 %>
+          You have moderate tracking vulnerability.
+        <% else %>
+          Your browser is relatively difficult to track uniquely.
+        <% end %>
+      </p>
+    </div>
+  </div>
+
+  <!-- Visit Information -->
+  <div class="border rounded-lg p-4" style="background-color: var(--color-bg-secondary); border-color: var(--color-border);">
+    <div class="grid md:grid-cols-3 gap-4 font-mono text-sm">
+      <div>
+        <p class="text-xs font-bold mb-1" style="color: var(--color-text-muted);">FINGERPRINT HASH</p>
+        <p class="text-xs font-mono break-all" style="color: var(--color-text-primary);"><%= result[:fingerprint_hash][0..31] %>...</p>
+      </div>
+      <div>
+        <p class="text-xs font-bold mb-1" style="color: var(--color-text-muted);">TIMES SEEN</p>
+        <p class="text-lg font-bold" style="color: var(--color-primary);"><%= result[:visit_count] %></p>
+      </div>
+      <div>
+        <p class="text-xs font-bold mb-1" style="color: var(--color-text-muted);">YOUR IP ADDRESS</p>
+        <p class="text-lg font-bold" style="color: var(--color-primary);"><%= result[:ip_address] %></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fingerprint Characteristics -->
+  <div class="border rounded-lg p-6" style="background-color: var(--color-bg-secondary); border-color: var(--color-border);">
+    <h3 class="font-mono text-lg font-bold mb-4 flex items-center" style="color: var(--color-text-primary);">
+      <span class="mr-2">▶</span>
+      FINGERPRINT CHARACTERISTICS
+    </h3>
+    <div class="space-y-3">
+      <% result[:analysis].each do |characteristic| %>
+        <div class="border-l-4 pl-4 py-2" style="border-color: <%= risk_color(characteristic[:risk]) %>;">
+          <div class="flex items-start justify-between">
+            <div class="flex-1">
+              <p class="font-mono text-sm font-bold" style="color: var(--color-text-primary);">
+                <%= characteristic[:name] %>
+              </p>
+              <p class="font-mono text-xs mt-1" style="color: var(--color-text-secondary);">
+                <%= characteristic[:value] %>
+              </p>
+              <p class="font-mono text-xs mt-1 italic" style="color: var(--color-text-muted);">
+                <%= characteristic[:note] %>
+              </p>
+            </div>
+            <span class="ml-4 px-2 py-1 rounded text-xs font-bold font-mono"
+                  style="background-color: <%= risk_bg_color(characteristic[:risk]) %>; color: <%= risk_color(characteristic[:risk]) %>;">
+              <%= characteristic[:risk].upcase %> RISK
+            </span>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Technical Details -->
+  <details class="border rounded-lg" style="background-color: var(--color-bg-secondary); border-color: var(--color-border);">
+    <summary class="p-4 cursor-pointer font-mono text-sm font-bold" style="color: var(--color-text-primary);">
+      ▶ TECHNICAL DETAILS
+    </summary>
+    <div class="p-4 pt-0 space-y-3">
+      <% result[:fingerprint_data].each do |key, value| %>
+        <div class="border-b pb-2" style="border-color: var(--color-border);">
+          <dt class="text-xs font-bold mb-1 font-mono" style="color: var(--color-text-muted);">
+            <%= key.to_s.upcase.gsub('_', ' ') %>
+          </dt>
+          <dd class="font-mono text-xs break-all" style="color: var(--color-text-primary);">
+            <%= value %>
+          </dd>
+        </div>
+      <% end %>
+    </div>
+  </details>
+
+  <!-- Privacy Tips -->
+  <div class="border-2 rounded-lg p-6" style="background-color: var(--color-bg-secondary); border-color: var(--color-success);">
+    <h3 class="font-mono text-lg font-bold mb-4 flex items-center" style="color: var(--color-success);">
+      <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+      </svg>
+      PRIVACY TIPS
+    </h3>
+    <ul class="space-y-2">
+      <% result[:privacy_tips].each do |tip| %>
+        <li class="flex items-start font-mono text-sm" style="color: var(--color-text-primary);">
+          <span class="mr-3" style="color: var(--color-success);">→</span>
+          <span><%= tip %></span>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+</div>

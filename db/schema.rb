@@ -10,7 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_01_185901) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_14_133220) do
+  create_table "fingerprints", force: :cascade do |t|
+    t.string "fingerprint_hash"
+    t.datetime "first_seen_at"
+    t.datetime "last_seen_at"
+    t.integer "visit_count"
+    t.text "user_agent"
+    t.string "ip_address"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["fingerprint_hash"], name: "index_fingerprints_on_fingerprint_hash", unique: true
+  end
+
   create_table "tools", force: :cascade do |t|
     t.string "name"
     t.text "description"

@@ -11,6 +11,11 @@ class ToolsController < ApplicationController
       return
     end
     @tool_instance = @tool_class.new
+
+    # Make IP address available for BrowserFingerprintTool
+    if @tool_class.name == 'BrowserFingerprintTool'
+      @user_ip_address = request.remote_ip
+    end
   end
 
   def execute
@@ -30,6 +35,11 @@ class ToolsController < ApplicationController
       if value.respond_to?(:read)
         tool_params[key] = value.read
       end
+    end
+
+    # Add IP address for BrowserFingerprintTool
+    if @tool_class.name == 'BrowserFingerprintTool'
+      tool_params[:ip_address] = request.remote_ip
     end
 
     errors = @tool_instance.validate_params(tool_params)
