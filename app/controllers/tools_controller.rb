@@ -14,7 +14,7 @@ class ToolsController < ApplicationController
 
     # Make IP address available for BrowserFingerprintTool
     if @tool_class.name == 'BrowserFingerprintTool'
-      @user_ip_address = request.remote_ip
+      @user_ip_address = get_real_ip
     end
   end
 
@@ -39,7 +39,7 @@ class ToolsController < ApplicationController
 
     # Add IP address for BrowserFingerprintTool
     if @tool_class.name == 'BrowserFingerprintTool'
-      tool_params[:ip_address] = request.remote_ip
+      tool_params[:ip_address] = get_real_ip
     end
 
     errors = @tool_instance.validate_params(tool_params)
@@ -125,6 +125,34 @@ class ToolsController < ApplicationController
   end
 
   private
+
+  # Get the real client IP address, accounting for proxies/load balancers
+  def get_real_ip
+    # Try various headers that proxies use to pass the real IP
+    # Order matters - we check from most to least reliable
+
+    # Standard forwarded header (most reliable)
+    if request.headers['X-Forwarded-For'].present?
+      # X-Forwarded-For can contain multiple IPs (client, proxy1, proxy2, ...)
+      # The first one is typically the real client IP
+      request.headers['X-Forwarded-For'].split(',').first.strip
+    # Cloudflare
+    elsif request.headers['CF-Connecting-IP'].present?
+      request.headers['CF-Connecting-IP']
+    # Some load balancers
+    elsif request.headers['X-Real-IP'].present?
+      request.headers['X-Real-IP']
+    # Fastly CDN
+    elsif request.headers['Fastly-Client-IP'].present?
+      request.headers['Fastly-Client-IP']
+    # Alternative forwarded header
+    elsif request.headers['X-Client-IP'].present?
+      request.headers['X-Client-IP']
+    # Fall back to remote_ip (Rails' built-in IP detection)
+    else
+      request.remote_ip
+    end
+  end
 
   def generate_csv(result, tool_name)
     require 'csv'
